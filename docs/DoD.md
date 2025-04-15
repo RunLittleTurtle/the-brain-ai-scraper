@@ -1,45 +1,51 @@
-# Definition of Done (DoD) for LLM
+# LLM Assistant - Directives & Workflow (Project The Brain)
 
-The LLM ("Windsurf") will autonomously manage the workflow from `[Backlog]` up to `[In Review]` based on pre-established priorities, deciding which `[To Do]` item to tackle next. The Human Operator's role is primarily the final quality gate: reviewing work in `[In Review]` and deciding whether to move it to `[Done]` or revert it.
+**YOU MUST FOLLOW THESE INSTRUCTIONS AT ALL TIMES.**
 
----
+**1. Core Context (ALWAYS Reference):**
 
-A feature listed on the project's status tracker can only be transitioned to the **`[Done]`** status by the **Human Operator**. This transition is only permissible when the feature is currently marked as **`[In Review]`** and *all* of the following criteria have been met and verified by the Human Operator:
+- **Tech Stack:** TypeScript, Node.js, Fastify (API), Prisma (ORM), Podman (for services during dev). *[Human: Keep this updated if stack changes]*
+- **Feature Checklist/Tracker:** $$*Human: Insert link or reference to your Kanban board/tracker here*] - This defines priorities (P0 > P1 > P2 > P3) and feature requirements.
+- **Your Goal:** Implement features according to the checklist and **advance tasks to the `[LLM_Test_Complete]` status**.
 
-1.  **Code Generation Complete:** The LLM has generated all necessary code artifacts (e.g., models, views, controllers, services, jobs, configuration, migrations, tests) required to implement the feature as described in the tracker item. **The LLM add meaningful comments \*within the code\* explaining complex logic or design rationale.** **the LLM to write code that *expects* secrets to be provided via environment variables, in ordeer to ensure a secure code.**
+**2. Security First:**
 
-2.  **Functionality Implemented:** The generated code achieves the primary functional goal(s) described for the feature. It operates correctly under expected conditions and handles standard inputs as specified or reasonably implied.
+- **Secrets:** NEVER hardcode secrets (API keys, passwords). Write code that reads secrets ONLY from **environment variables**. If a value isn't known, use a clear placeholder like `process.env.EXPECTED_SECRET_NAME` and add a `// TODO: Configure SECRET environment variable: EXPECTED_SECRET_NAME` comment.
+- **Input Validation:** Implement reasonable input validation for API endpoints and function arguments.
 
-3.  **LLM Testing Passed & Verified:** The LLM has successfully executed its own defined test suite(s) for the feature, and consequently moved the status from `[Test]` to `[In Review]`. The Human Operator acknowledges this step was completed by the LLM.
+**3. Code Quality:**
 
-4.  **Code Review Passed:** The Human Operator has reviewed the generated code and deems it acceptable based on:
-    *   **Correctness:** The code logically implements the feature requirements.
-    *   **Project Standards:** Adherence to established coding conventions, architectural patterns, and style guides (within reasonable expectations for LLM output).
-    *   **Maintainability:** The code is sufficiently clear and structured to be understood and modified by a human developer later.
-    *   **Security:** No blatant or obvious security vulnerabilities have been introduced.
+- **Comments:** Add comments *within the code* to explain complex logic, algorithms, or important design decisions.
+- **Clarity:** Aim for readable and maintainable code adhering to standard TypeScript practices.
 
-5.  **Human Functional Verification Passed:** The Human Operator has independently verified that the feature works as intended in the application environment. This may involve:
-    *   Manual testing of the user interface or API endpoints.
-    *   Executing specific use-case scenarios.
-    *   Confirming data is stored and retrieved correctly.
-    *   Reviewing the output or side effects of background jobs.
+**4. Workflow & Status Management:**
 
-6.  **Integration Verified:** The introduction of the new feature does not negatively impact or break existing, related functionalities (no regressions detected during human verification).
+- **Task Selection:** Autonomously select the highest priority task (P0, then P1, etc.) from `[Backlog]` or `[To Do]` on the Feature Checklist.
+- Status Updates (Your Responsibility):
+  - `[Backlog]` -> `[To Do]` (When you decide to tackle it next)
+  - `[To Do]` -> `[LLM_In_Progress]` (When you start active coding/generation)
+  - `[LLM_In_Progress]` -> `[LLM_Testing]` (When you *finish* generating the code for the feature)
+  - `[LLM_Testing]` -> `[LLM_In_Progress]` (If your self-tests *fail*. Fix the code.)
+  - `[LLM_Testing]` -> `[LLM_Test_Complete]` (If your self-tests *pass*. **Notify the Human Operator** you are ready for review.)
+  - `[LLM_Test_Complete]` -> `[Human_Review]` (You Must prepare indication or a Test for the Human, so the Human can test and acknowledges readiness)
+- Status Updates (Human Operator ONLY):
+  - `[Human_Review]` -> `[Done]` (Human confirms ALL criteria met)
+  - `[Human_Review]` -> `[LLM_In_Progress]` (Human rejects; provides feedback. Remove `_Test_Complete` tag.)
 
-7.  **Logging & Diagnostics (If Applicable):** Sufficient logging (as defined in the project plan/standards) has been implemented by the LLM to aid in monitoring and debugging the feature.
+**5. Testing Protocol:**
 
-8.  **Documentation Updated (If Necessary):** Any essential comments explaining complex or non-obvious LLM-generated logic have been added, or any required external documentation related to the feature has been created or updated.
+- Before moving from `[LLM_In_Progress]` to `[LLM_Testing]`, define and attempt basic tests for the code you generated (unit tests, simple integration checks, or describe the manual test steps you would perform).
+- Execute these tests.
+- **Crucially:** Update the status based *only* on the test outcome (`[LLM_Test_Complete]` on pass, back to `[LLM_In_Progress]` on fail).
 
----
+**6. Definition of `[LLM_Test_Complete]` (Your target state before involving Human):**
 
-### Workflow Implied by DoD:
+- All required code generated.
+- Code implements the core feature described in the tracker.
+- Secrets are handled via environment variables.
+- Necessary comments are present.
+- Your defined self-tests PASS.
 
-*   **LLM Action (`[Backlog]` -> `[To Do]`):** LLM selects the next highest priority item from `[Backlog]` (based on P0,P1,P2,P3 set priorities) and moves it to `[To Do]`.
-*   **LLM Action (`[To Do]` -> `[In Progress]`):** LLM picks an item from `[To Do]` and starts working on it, moving it to `[In Progress]`.
-*   **LLM Action (`[In Progress]` -> `[Test]`):** LLM finishes code generation and moves the item to `[Test]`.
-*   **LLM Action (`[Test]` -> `[In Progress]`):** If LLM's tests fail, LLM removes `[Test]` tag, returning to `[In Progress]` to fix issues.
-*   **LLM Action (`[Test]` -> `[In Review]`):** If LLM's tests pass, LLM adds `[In Review]` tag, and tell the human in the chat to go review the new feature.
-*   **Human Action (`[In Review]` -> `[Done]`):** If Human Operator verifies all DoD criteria are met, they add the `[Done]` tag.
-*   **Human Action (`[In Review]` -> `[In Progress]`):** If Human Operator finds issues violating the DoD, they remove `[In Review]` and `[Test]` tags (returning it effectively to `[In Progress]`), providing feedback to guide the LLM's next iteration.
+**7. Await Instructions:**
 
-This DoD clearly outlines the human's final checklist before accepting the LLM's work, ensuring quality and alignment despite the LLM's autonomy in the earlier stages.
+- Once a task is `[LLM_Test_Complete]`, **clearly state this** to the Human Operator and wait for their review or further instructions. **Do NOT proceed to `[Done]` or pick a new task until the reviewed one is moved out of `[LLM_Test_Complete]` by the Human.**

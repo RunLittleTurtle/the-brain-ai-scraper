@@ -1,92 +1,88 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { randomUUID } from 'crypto';
+import { PrismaClient } from '../../generated/prisma/index.js'; 
+import { BuildRepository, CreateBuildData } from '../../infrastructure/db/build.repository.js'; 
+import { processBuildJob } from '../../jobs/build.processor.js'; 
+import { createBuildSchema, CreateBuildBody } from './build.schema.js'; 
+import { apiKeyAuth } from '../../hooks/apiKeyAuth.js'; 
 
-// In-memory build storage (replace with DB later)
-const builds: Record<string, any> = {};
+/**
+ * Handles POST /builds requests
+ */
+async function createBuildHandler(request: FastifyRequest, reply: FastifyReply) {
+    // Access Prisma client from the Fastify instance decorated by the plugin
+    const prisma: PrismaClient = request.server.prisma;
+    // Instantiate repository (could use DI in a larger app)
+    const buildRepository = new BuildRepository(prisma);
 
-// Simple API key check middleware
-function apiKeyAuth(request: FastifyRequest, reply: FastifyReply, done: () => void) {
-  const authHeader = request.headers.authorization; // Fastify normalizes to lowercase
-  const expectedKey = process.env.API_KEY;
-  let apiKey: string | undefined;
+    // Fastify types request.body based on the schema applied to the route
+    // Explicit type assertion can be used if needed, but often inference is sufficient
+    const { target_urls, user_objective } = request.body as CreateBuildBody;
 
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    apiKey = authHeader.substring(7); // Extract token after "Bearer "
-  }
+    // Basic validation (schema validation is primary)
+    if (!target_urls || target_urls.length === 0 || !user_objective) {
+        // Schema validation should catch this, but good practice
+        return reply.badRequest('Missing required fields: target_urls and user_objective');
+    }
 
-  // Log for debugging
-  console.log('Received Authorization header:', authHeader, '| Extracted Key:', apiKey, '| Expected:', expectedKey);
+    try {
+        const createData: CreateBuildData = {
+            targetUrls: target_urls,
+            userObjective: user_objective,
+        };
 
-  if (apiKey !== expectedKey) {
-    reply.status(401).send({ error: 'Unauthorized' });
-    return;
-  }
-  done();
+        // Use repository to create the build record
+        const newBuild = await buildRepository.createBuild(createData);
+
+        // --- Trigger Background Job (Temporary direct async call) ---
+        // IMPORTANT: Replace this with a proper job queue enqueue later!
+        request.log.info(`[BuildsController] Triggering background job for build ${newBuild.id}`);
+        processBuildJob('job-' + newBuild.id, newBuild.id).catch(err => {
+            // Basic error handling for the async job trigger itself
+            request.log.error(`Error triggering background job for build ${newBuild.id}:`, err);
+            // TODO: Decide how to handle this failure robustly
+            // Option 1: Update build status to FAILED immediately
+            // Option 2: Log and rely on monitoring/retries (if queue exists)
+            buildRepository.updateBuildStatus(newBuild.id, 'FAILED', 'Failed to trigger processing job').catch(updateErr => {
+                 request.log.error(`Failed to update build status after job trigger error for ${newBuild.id}:`, updateErr);
+            });
+        });
+        // --- End Temporary Trigger ---
+
+        // Return 202 Accepted with the build ID
+        return reply.code(202).send({
+            message: "Build request accepted and processing started.",
+            build_id: newBuild.id,
+            status: newBuild.status // Initial status (e.g., PENDING_ANALYSIS)
+        });
+
+    } catch (error: any) {
+        request.log.error('Error creating build in handler:', error);
+        // Use sensible plugin's error handling for internal server errors
+        return reply.internalServerError('Failed to initiate build process.');
+    }
 }
 
-export async function buildsRoutes(app: FastifyInstance) {
-  app.post('/builds', {
-    preHandler: apiKeyAuth,
-    schema: {
-      body: {
-        type: 'object',
-        required: ['target_urls', 'user_objective'],
-        properties: {
-          target_urls: {
-            type: 'array',
-            items: { type: 'string', format: 'uri' },
-            minItems: 1,
-          },
-          user_objective: { type: 'string', minLength: 1 },
-        },
-      },
-      response: {
-        202: {
-          type: 'object',
-          properties: {
-            build_id: { type: 'string' },
-            status: { type: 'string' },
-          },
-          required: ['build_id', 'status'],
-        },
-        400: {
-          type: 'object',
-          properties: { error: { type: 'string' } },
-        },
-        401: {
-          type: 'object',
-          properties: { error: { type: 'string' } },
-        },
-      },
-    },
-    handler: async (request, reply) => {
-      const { target_urls, user_objective } = request.body as any;
-      // Additional validation if needed
-      if (!Array.isArray(target_urls) || target_urls.length === 0 || !user_objective) {
-        return reply.status(400).send({ error: 'Invalid payload' });
-      }
-      // Generate build_id
-      const build_id = randomUUID();
-      builds[build_id] = {
-        build_id,
-        target_urls,
-        user_objective,
-        status: 'pending_analysis',
-        created_at: new Date().toISOString(),
-      };
-      // Stub: Trigger async LLM analysis (to be implemented)
-      // ...
-      return reply.status(202).send({ build_id, status: 'pending_analysis' });
-    },
-  });
+/**
+ * Defines routes for the /builds endpoint
+ */
+export default async function (fastify: FastifyInstance) {
 
-  // Handle unsupported methods on /builds route
-  app.route({
-    method: ['GET', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'], // Add other methods as needed
-    url: '/builds',
-    preHandler: apiKeyAuth, // Keep authentication for consistency
-    handler: async (request, reply) => {
-      reply.methodNotAllowed(); // Use sensible's helper
-    },
-  });
+    // Create a new build request
+    fastify.post('/',
+        {
+            schema: createBuildSchema, // Apply schema validation
+            preHandler: [apiKeyAuth] // Apply API key authentication
+        },
+        createBuildHandler
+    );
+
+    // Handle unsupported methods on /builds route
+    fastify.route({
+        method: ['GET', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'], 
+        url: '/',
+        preHandler: [apiKeyAuth], // Keep authentication for consistency
+        handler: async (request, reply) => {
+            return reply.methodNotAllowed(); // Use sensible's helper
+        },
+    });
 }

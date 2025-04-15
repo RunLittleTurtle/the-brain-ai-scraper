@@ -1,73 +1,10 @@
 # Development Plan (Fastify Edition)
 
-## Introduction
+## 1. Introduction
 
 This document outlines the development plan for "The Brain" API project, specifically using the Fastify web framework. It details the file structure, phased development tasks, logging strategy, initial toolbox implementation, and key considerations. This plan serves as the primary guide for the *implementation* process, complementing the Features Checklist which defines *what* needs to be built and tracks progress. The target language is TypeScript, running in a Node.js environment with Fastify.
 
-## 1. File Structure 
 
-A modular and organized file structure is crucial for maintainability and scalability. The proposed structure follows common TypeScript best practices:
-
-```markdown
-.
-├── src/
-│   ├── plugins/                  # Fastify plugins (e.g., auth, db connection, swagger, rate-limit)
-│   │
-│   ├── modules/                  # Feature modules encapsulating routes, services, schemas
-│   │   ├── builds/               # Build feature module
-│   │   │   ├── build.controller.ts # Handles build-related requests (often implicitly via routes in Fastify)
-│   │   │   ├── build.service.ts    # Core logic for builds
-│   │   │   ├── build.routes.ts     # Defines `/builds` routes and handlers
-│   │   │   └── build.schema.ts     # JSON Schemas for validation/serialization
-│   │   │
-│   │   ├── runs/                 # Run feature module (similar structure)
-│   │   │   ├── run.controller.ts
-│   │   │   ├── run.service.ts
-│   │   │   ├── run.routes.ts
-│   │   │   └── run.schema.ts
-│   │   │
-│   │   └── tools/                # Tool discovery module
-│   │       └── ...
-│   │
-│   ├── core/                     # Core Cross-Cutting Concerns & Domain Logic
-│   │   ├── domain/               # Core entities (Build, Run, ConfigPackage), value objects, base tool types
-│   │   ├── interfaces/           # Abstract interfaces (ILlmProvider, IBuildRepository, IRunRepository, IToolbox, IQueueProducer)
-│   │   └── services/             # Shared services (LlmService, KnowledgeBaseService - if not in modules)
-│   │
-│   ├── infrastructure/           # External Systems Adapters & Concrete Implementations
-│   │   ├── db/                   # Database interactions (Prisma/TypeORM client, repository implementations)
-│   │   ├── llm/                  # LLM provider client/adapter
-│   │   ├── toolbox/              # Implementations of individual tools (scraper classes, proxy functions etc.) adhering to core interfaces
-│   │   ├── queue/                # Message queue integration (BullMQ client, producer implementation)
-│   │   └── cache/                # Optional Caching layer
-│   │
-│   ├── jobs/                     # Asynchronous Job Processors (workers for BullMQ etc.)
-│   │   ├── build.processor.ts
-│   │   └── run.processor.ts
-│   │
-│   ├── common/                   # Shared utilities, constants, errors
-│   │   └── errors/               # Custom error classes & error handling utilities/hooks
-│   │
-│   ├── config/                   # Application configuration (e.g., using fastify-env)
-│   │
-│   ├── types/                    # Global TypeScript types/interfaces
-│   │
-│   ├── app.ts                    # Fastify app factory/setup
-│   └── server.ts                 # Entry point to start the server
-│
-├── tests/                        # Unit, Integration, and E2E tests
-│   ├── unit/
-│   ├── integration/
-│   └── e2e/
-│
-├── .env.example
-├── .gitignore
-├── Dockerfile
-├── package.json
-├── README.md
-├── tsconfig.json
-└── .eslintrc.js
-```
 
 ## 2. Detailed Development Plan (Phased)
 

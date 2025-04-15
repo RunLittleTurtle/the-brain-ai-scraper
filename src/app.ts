@@ -1,35 +1,36 @@
-import Fastify from 'fastify';
-import { FastifyInstance } from 'fastify';
-import sensible from 'fastify-sensible'; // Import the plugin
+import Fastify, { FastifyInstance } from 'fastify';
+import autoload from '@fastify/autoload';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import sensible from '@fastify/sensible';
+import dbPlugin from './plugins/db.plugin.js';
 
-export function buildApp(): FastifyInstance {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
-    logger: true,
+    logger: true, // Or configure based on environment
   });
 
-  // Register sensible plugin
-  app.register(sensible);
+  // Register essential plugins first
+  await app.register(sensible); // Register sensible for error handling
+  await app.register(dbPlugin);
 
-  app.get('/health', {
-    schema: {
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            status: { type: 'string' },
-          },
-          required: ['status'],
-        },
-      },
-    },
-    handler: async (request, reply) => {
-      return { status: 'ok' };
-    },
+  // Autoload OTHER plugins (if any)
+  await app.register(autoload, {
+    dir: path.join(__dirname, 'plugins'),
+    options: { /* options for plugins */ },
+    ignorePattern: /.*db.plugin\.(js|ts)$/,
+    dirNameRoutePrefix: false,
   });
 
-  // Register builds routes
-  import('./modules/builds/builds.controller').then(({ buildsRoutes }) => {
-    buildsRoutes(app);
+  // Autoload routes from modules
+  await app.register(autoload, {
+    dir: path.join(__dirname, 'modules'),
+    options: { prefix: '/api/v1' }, // Set API prefix
+    dirNameRoutePrefix: (folderName) => folderName, // e.g., /api/v1/builds
+    ignorePattern: /.*(schema|types|repository|service)\.(js|ts)$/, // Ignore non-route files
   });
 
   return app;
