@@ -1,5 +1,8 @@
 # Features Checklist
 
+- [ ] **Regression Suite:** All tests in `src/regression/regression.test.ts` must pass before moving any feature to “In Review” or “Done”.
+
+
 This checklist prioritizes features (P0-P3) grouping them by parent page/module, considering core user value and a logical development flow.
 
 ## Priority Legend:
@@ -26,7 +29,7 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
   - Returns `202 Accepted` response with `build_id` and initial status (e.g., `processing` or `analyzing`).
   - Handles auth failures and basic validation errors with appropriate HTTP status codes (400, 401/403).
 
-### Feature: LLM Analysis & Initial Tool Selection (Internal Process) - P0 [In Progress]
+### Feature: LLM Analysis & Initial Tool Selection (Internal Process) - P0 [LLM_Test_Complete]
 
 - Done Criteria:
   - Backend process receives build request data (`build_id`, URLs, objective).
