@@ -15,9 +15,7 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 
 ## 1. Core Build Lifecycle
 
-### Feature: API Endpoint for Build Initiation (`POST /builds`)
-
-P0 [Backlog]
+### Feature: API Endpoint for Build Initiation (`POST /builds`) - P0 [Done]
 
 - Done Criteria:
   - Endpoint accepts JSON payload: `target_urls` (array of strings), `user_objective` (string).
@@ -28,9 +26,7 @@ P0 [Backlog]
   - Returns `202 Accepted` response with `build_id` and initial status (e.g., `processing` or `analyzing`).
   - Handles auth failures and basic validation errors with appropriate HTTP status codes (400, 401/403).
 
-### Feature: LLM Analysis & Initial Tool Selection (Internal Process)
-
-P0 [Backlog]
+### Feature: LLM Analysis & Initial Tool Selection (Internal Process) - P0 [To Do]
 
 - Done Criteria:
   - Backend process receives build request data (`build_id`, URLs, objective).
@@ -43,9 +39,7 @@ P0 [Backlog]
   - Updates build status (e.g., to `generating_samples`).
   - Handles LLM analysis failures (e.g., cannot understand objective, cannot identify tools) by updating build status to `failed` with an appropriate error message.
 
-### Feature: Modular Tool Integration & Execution Framework
-
-P0 [Backlog]
+### Feature: Modular Tool Integration & Execution Framework - P0 [To Do]
 
 - Done Criteria:
   - Define a standard internal interface or contract (e.g., TypeScript interface) for different scraping tools (e.g., Playwright script class, Cheerio/DOM parser function, specific API client).
@@ -54,9 +48,7 @@ P0 [Backlog]
   - Ensure tools can be invoked with specific parameters (URLs, selectors, credentials, proxy settings) defined in the configuration package.
   - Ensure tools return results (or errors) in a standardized format (e.g., defined TypeScript types) that the core engine can capture.
 
-### Feature: Initial Sample Generation (Internal Process)
-
-P0 [Backlog]
+### Feature: Initial Sample Generation (Internal Process) - P0 [To Do]
 
 - Done Criteria:
   - Backend process uses the "Modular Tool Integration & Execution Framework" to run the initially selected tool package (from "LLM Analysis & Initial Tool Selection").
@@ -66,9 +58,7 @@ P0 [Backlog]
   - Updates the build status to `pending_user_feedback` upon successful sample generation.
   - Handles failures during sample generation (e.g., tool errors, sites blocking) by updating build status to `failed` with specific error details.
 
-### Feature: API Endpoint for Build Status & Samples (`GET /builds/{build_id}`)
-
-P0 [Backlog]
+### Feature: API Endpoint for Build Status & Samples (`GET /builds/{build_id}`) - P0 [To Do]
 
 - Done Criteria:
   - Endpoint accepts `build_id` via path parameter.
@@ -79,9 +69,7 @@ P0 [Backlog]
   - Handles auth failures (401/403).
   - Response structure is consistent.
 
-### Feature: API Endpoint for Build Refinement/Feedback (`POST /builds/{build_id}/configure`)
-
-P1 [Backlog]
+### Feature: API Endpoint for Build Refinement/Feedback (`POST /builds/{build_id}/configure`) - P1 [Backlog]
 
 - Done Criteria:
   - Endpoint accepts `build_id` via path parameter.
@@ -95,9 +83,7 @@ P1 [Backlog]
   - Handles invalid state errors (e.g., trying to configure a confirmed build) (409 Conflict or 400).
   - Handles auth failures (401/403).
 
-### Feature: LLM Package Refinement & Tool Switching (Internal Process)
-
-P1 [Backlog]
+### Feature: LLM Package Refinement & Tool Switching (Internal Process) - P1 [Backlog]
 
 - Done Criteria:
   - Backend refinement process receives build context and user feedback.
@@ -110,9 +96,7 @@ P1 [Backlog]
   - Updates build status appropriately (e.g., `validating_config` or `generating_samples`).
   - Handles LLM failures during refinement (e.g., cannot interpret feedback) by updating status to `failed`.
 
-### Feature: Configuration Package Sanity Check (Internal Process - Optional Enhancement)
-
-P2/P3 [Backlog]
+### Feature: Configuration Package Sanity Check (Internal Process - Optional Enhancement) - P2/P3 [Backlog]
 
 - Done Criteria:
   - **Trigger:** Executes immediately after `LLM Package Refinement` generates a new temporary configuration package.
@@ -122,9 +106,7 @@ P2/P3 [Backlog]
   - **(Outcome):** If validation fails, updates the build status to `failed` with a specific error (e.g., "Internal Error: Invalid configuration package generated") and prevents the sample generation attempt.
   - Adds minimal processing overhead.
 
-### Feature: Universal Configuration Package Format (Internal Definition)
-
-P0 [Backlog]
+### Feature: Universal Configuration Package Format (Internal Definition) - P0 [To Do]
 
 - Done Criteria:
   - Define a standardized JSON schema (or similar format, like TypeScript types/interfaces for validation) for representing a complete "Scraper Configuration Package".
@@ -138,9 +120,7 @@ P0 [Backlog]
   - This format is consumed by the "Modular Tool Integration & Execution Framework" to run builds and full scrapes.
   - This format is what gets saved as the `final_configuration` upon confirmation.
 
-### Feature: API Endpoint for Build Confirmation (`POST /builds/{build_id}/confirm`)
-
-P0 [Backlog]
+### Feature: API Endpoint for Build Confirmation (`POST /builds/{build_id}/confirm`) - P0 [To Do]
 
 - Done Criteria:
   - Endpoint accepts `build_id` via path parameter.
@@ -154,9 +134,7 @@ P0 [Backlog]
   - Handles invalid state errors (409 Conflict or 400).
   - Handles auth failures (401/403).
 
-### Feature: Error Reporting for Failed Builds (`GET /builds/{build_id}`)
-
-P0 [Backlog]
+### Feature: Error Reporting for Failed Builds (`GET /builds/{build_id}`) - P0 [To Do]
 
 - Done Criteria:
   - When a build process fails (during LLM analysis, sample generation, refinement, or sanity check), its status is updated to `failed`.
@@ -167,9 +145,7 @@ P0 [Backlog]
 
 ## 2. Core Run Lifecycle
 
-### Feature: API Endpoint for Run Execution (`POST /runs`)
-
-P0 [Backlog]
+### Feature: API Endpoint for Run Execution (`POST /runs`) - P0 [To Do]
 
 - Done Criteria:
   - Endpoint accepts JSON payload: `build_id`, `target_urls` (array of strings).
@@ -183,9 +159,7 @@ P0 [Backlog]
   - Handles validation errors (invalid `build_id`, non-confirmed state, bad URLs) (400, 404).
   - Handles auth failures (401/403).
 
-### Feature: Full Scrape Execution Engine (Internal Process)
-
-P0 [Backlog]
+### Feature: Full Scrape Execution Engine (Internal Process) - P0 [To Do]
 
 - Done Criteria:
   - Backend process receives `run_id`, `target_urls`, and `final_configuration`.
@@ -196,9 +170,7 @@ P0 [Backlog]
   - Updates run status periodically (e.g., `running` with progress) and finally to `completed` or `failed`.
   - Stores the aggregated results associated with the `run_id`.
 
-### Feature: API Endpoint for Run Status (`GET /runs/{run_id}`)
-
-P0 [Backlog]
+### Feature: API Endpoint for Run Status (`GET /runs/{run_id}`) - P0 [To Do]
 
 - Done Criteria:
   - Endpoint accepts `run_id` via path parameter.
@@ -208,9 +180,7 @@ P0 [Backlog]
   - Handles `run_id` not found (404).
   - Handles auth failures (401/403).
 
-### Feature: API Endpoint for Run Results Retrieval (`GET /runs/{run_id}/results`)
-
-P0 [Backlog]
+### Feature: API Endpoint for Run Results Retrieval (`GET /runs/{run_id}/results`) - P0 [To Do]
 
 - Done Criteria:
   - Endpoint accepts `run_id` via path parameter.
@@ -222,9 +192,7 @@ P0 [Backlog]
   - Handles auth failures (401/403).
   - (P2/P3 Consideration): Implement pagination (`limit`, `offset` params) for large result sets.
 
-### Feature: Error Reporting for Failed Runs (`GET /runs/{run_id}`)
-
-P0 [Backlog]
+### Feature: Error Reporting for Failed Runs (`GET /runs/{run_id}`) - P0 [To Do]
 
 - Done Criteria:
   - When a run process fails (e.g., critical tool error, excessive URL failures), its status is updated to `failed`.
@@ -232,9 +200,7 @@ P0 [Backlog]
   - The response includes a clear, user-understandable `error` field detailing the overall failure reason (e.g., "Run failed: >50% URLs resulted in errors", "Critical component failure: Proxy Manager").
   - (P1 Requirement): Define and implement policy on whether `GET /runs/{run_id}/results` should return partial data for failed runs.
 
-### Feature: API Endpoint for Run Cancellation (`POST /runs/{run_id}/cancel` or `DELETE /runs/{run_id}`)
-
-P1 [Backlog]
+### Feature: API Endpoint for Run Cancellation (`POST /runs/{run_id}/cancel` or `DELETE /runs/{run_id}`) - P1 [Backlog]
 
 - Done Criteria:
   - Endpoint accepts `run_id` via path parameter.
@@ -251,9 +217,7 @@ P1 [Backlog]
 
 ## 3. Learning / Knowledge Base Features
 
-### Feature: Knowledge Base - Save Successful Configuration Package
-
-P2 [Backlog]
+### Feature: Knowledge Base - Save Successful Configuration Package - P2 [Backlog]
 
 - Done Criteria:
   - Process triggers automatically and successfully upon `POST /builds/{id}/confirm`.
@@ -264,9 +228,7 @@ P2 [Backlog]
   - Saving process adds minimal latency to the user's confirmation request.
   - Failures during saving are logged but do not prevent the build confirmation from succeeding for the user.
 
-### Feature: Knowledge Base - Leverage Past Configuration Packages
-
-P2 [Backlog]
+### Feature: Knowledge Base - Leverage Past Configuration Packages - P2 [Backlog]
 
 - Done Criteria:
 
@@ -297,9 +259,7 @@ P2 [Backlog]
 
 ## 4. System Transparency & Manual Control Features
 
-### Feature: API Endpoint for Tool Discovery (`GET /tools`)
-
-P1 [Backlog]
+### Feature: API Endpoint for Tool Discovery (`GET /tools`) - P1 [Backlog]
 
 - Done Criteria:
   - Endpoint is publicly accessible (or requires standard auth).
@@ -311,9 +271,7 @@ P1 [Backlog]
     - Brief `description` of its function/use case.
     - (Optional P2 Enhancement): Expected parameters/schema for the tool's configuration block within the Universal Configuration Package Format.
 
-### Feature: API Endpoint for Manual Build (`POST /builds/manual`)
-
-P2 [Backlog]
+### Feature: API Endpoint for Manual Build (`POST /builds/manual`) - P2 [Backlog]
 
 - Done Criteria:
   - Endpoint accepts a JSON payload containing a complete scraper configuration package defined in the **Universal Configuration Package Format**.
