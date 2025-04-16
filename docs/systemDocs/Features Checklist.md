@@ -196,7 +196,8 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 
 ## 2. Core Run Lifecycle
 
-### Feature: API Endpoint for Run Execution (`POST /runs`) - P0 [LLM_To_Do]
+### Feature: API Endpoint for Run Execution (`POST /runs`) - P0 [LLM_In_Progress]
+> **Note:** This is the next feature being implemented. Status advanced to [LLM_In_Progress] as of 2025-04-16.
 
 - Done Criteria:
   - Endpoint accepts JSON payload: `build_id`, `target_urls` (array of strings).
