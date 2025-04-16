@@ -3,6 +3,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from './types/fast
 import dbPlugin from './plugins/db.plugin.js';
 import sensible from '@fastify/sensible'; // Import @fastify/sensible
 import buildsController from './modules/builds/builds.controller.js'; // Use default import
+import runsController from './modules/runs/runs.controller.js'; // Register runs endpoint
 import mcpPlugin from './mcp-server/mcp.plugin.js'; // Import MCP Plugin
 import { apiKeyAuth } from './hooks/apiKeyAuth.js'; // Import hook
 import dependenciesPlugin from './plugins/dependencies.plugin.js'; // Ensure .js
@@ -47,6 +48,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
     // Register routes that require auth under this scope
     // These plugins should also ideally use BaseFastifyInstance in their signature
     await instance.register(buildsController, { prefix: '/builds' });
+    await instance.register(runsController, { prefix: '/runs' }); // Register new runs endpoint
     await instance.register(mcpPlugin, { prefix: '/mcp' }); // Register MCP service routes
   });
 

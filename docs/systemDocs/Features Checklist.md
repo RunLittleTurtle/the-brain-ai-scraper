@@ -76,7 +76,7 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 
 ### Feature: API Endpoint for Run Execution (`POST /runs`) - P0 [LLM_To_Do]
 - **Sub-Features:**
-  - **4.1 Route & Input Validation** - [LLM_To_Do]
+  - **4.1 Route & Input Validation** - [LLM_In_Progress]
     - Define Fastify route, validate payload (`build_id`, `target_urls`).
   - **4.2 Auth & Build State Checks** - [LLM_To_Do]
     - Ensure build exists, is confirmed, and user is authorized.

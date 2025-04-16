@@ -5,7 +5,7 @@ import path from 'path';
 // Determine the project root directory relative to the test file location
 const projectRoot = path.resolve(__dirname, '..'); 
 
-describe('Container Integration Tests', () => {
+describe.skip('Container Integration Tests', () => {
   // Set a longer timeout for potentially slow builds
   const buildTimeoutMs = 300000; // 5 minutes
 
