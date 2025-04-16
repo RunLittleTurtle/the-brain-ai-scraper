@@ -10,7 +10,31 @@ interface FetchCheerioParams {
 }
 
 export class FetchCheerioScraper implements IScraperTool {
-  readonly toolId = 'scraper:fetch_cheerio_v1';
+  /**
+   * MCP-compliant tool definition for LLM discovery and developer clarity.
+   */
+  static getMcpDefinition() {
+    return {
+      name: "scraper_fetch_cheerio_v1",
+      description: "IScraperTool: Scrapes static HTML content from a URL using Cheerio. Does not execute JavaScript.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          url: { type: "string", description: "Target URL to scrape" },
+          selectors: { type: "object", description: "Key-value pairs of output field and CSS selector" },
+          attribute: { type: "string", enum: ["text", "html"], description: "What to extract from selector (default: text)" },
+          baseUrl: { type: "string", description: "Optional base URL for resolving relative links" },
+          timeout_ms: { type: "number", description: "Optional timeout in milliseconds" }
+        },
+        required: ["url", "selectors"]
+      },
+      annotations: {
+        title: "Static HTML Scraper (Cheerio)",
+        openWorldHint: true
+      }
+    };
+  }
+  readonly toolId = 'scraper_fetch_cheerio_v1';
   readonly name = 'Fetch + Cheerio Scraper';
   readonly description = 'Fetches HTML using native fetch and extracts data using Cheerio selectors.';
   private config?: ToolConfiguration; // Store the config

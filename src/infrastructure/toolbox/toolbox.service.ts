@@ -1,7 +1,18 @@
-import { ITool } from '../../infrastructure/execution/tool.interface.js';
-import { IToolbox } from '../../core/interfaces/toolbox.interface.js';
-import { FetchCheerioScraper } from './fetch-cheerio.scraper.js';
-import { PlaywrightScraper } from './playwright.scraper.js';
+import { ITool } from '../execution/tool.interface';
+import { IToolbox } from '../../core/interfaces/toolbox.interface';
+import { FetchCheerioScraper } from './fetch-cheerio.scraper';
+import { PlaywrightScraper } from './playwright.scraper';
+import { ProxyManagerTool } from './proxy-manager.tool';
+import { AntiBlockingTool } from './anti-blocking.tool';
+
+// MCP tool definition type
+export interface McpToolDefinition {
+  name: string;
+  description?: string;
+  inputSchema: object;
+  annotations?: Record<string, any>;
+}
+
 
 /**
  * Concrete implementation of the IToolbox interface.
@@ -11,7 +22,8 @@ import { PlaywrightScraper } from './playwright.scraper.js';
  * to load tools dynamically or from a configuration source.
  */
 export class ToolboxService implements IToolbox {
-  private tools: Map<string, ITool> = new Map();
+  // Store both the tool instance and its MCP metadata
+  private tools: Map<string, { instance: ITool, mcp: McpToolDefinition }> = new Map();
   private logger = console; // Basic logger
 
   /**
@@ -20,11 +32,19 @@ export class ToolboxService implements IToolbox {
    * @param tool - The tool instance to register.
    */
   registerTool(tool: ITool): void {
-    if (this.tools.has(tool.toolId)) {
-      this.logger.warn(`Tool with ID '${tool.toolId}' is already registered. Overwriting.`);
+    // Use MCP definition if available
+    const getDef = (tool.constructor as any).getMcpDefinition;
+    const mcp = typeof getDef === 'function' ? getDef.call(tool.constructor) : {
+      name: tool.toolId,
+      description: tool.description || '',
+      inputSchema: {},
+      annotations: {}
+    };
+    if (this.tools.has(mcp.name)) {
+      this.logger.warn(`Tool with MCP name '${mcp.name}' is already registered. Overwriting.`);
     }
-    this.logger.log(`Registering tool: ${tool.toolId} (${tool.name || 'Unnamed Tool'})`);
-    this.tools.set(tool.toolId, tool);
+    this.logger.log(`Registering tool: ${mcp.name} (${tool.name || 'Unnamed Tool'})`);
+    this.tools.set(mcp.name, { instance: tool, mcp });
   }
 
   /**
@@ -33,8 +53,8 @@ export class ToolboxService implements IToolbox {
    * @returns The tool instance if found, otherwise undefined.
    */
   async getTool(toolId: string): Promise<ITool | undefined> {
-    const tool = this.tools.get(toolId);
-    return Promise.resolve(tool);
+    const entry = this.tools.get(toolId);
+    return Promise.resolve(entry?.instance);
   }
 
   /**
@@ -43,15 +63,44 @@ export class ToolboxService implements IToolbox {
    * @returns An array of available tool instances.
    */
   listTools(): ITool[] {
-    return Array.from(this.tools.values());
+    return Array.from(this.tools.values()).map(t => t.instance);
+  }
+
+  /**
+   * Lists all MCP tool definitions for LLM/developer discovery.
+   */
+  listMcpTools(): McpToolDefinition[] {
+    return Array.from(this.tools.values()).map(t => t.mcp);
+  }
+
+  /**
+   * Calls a tool by MCP name with parameters (MCP-style invocation).
+   * Optionally validate params against inputSchema (add ajv for full validation).
+   */
+  async callTool(name: string, params: any): Promise<any> {
+    const entry = this.tools.get(name);
+    if (!entry) throw new Error(`Tool ${name} not found`);
+    // Optionally: validate params against entry.mcp.inputSchema
+    // For scrapers, expect 'execute', for others, method varies
+    if (typeof (entry.instance as any).execute === 'function') {
+      return (entry.instance as any).execute(params.url, params);
+    }
+    // Try proxy or anti-blocking interfaces
+    if (typeof (entry.instance as any).getProxyForUrl === 'function') {
+      return (entry.instance as any).getProxyForUrl(params.targetUrl);
+    }
+    if (typeof (entry.instance as any).applyStrategies === 'function') {
+      return (entry.instance as any).applyStrategies(params.context);
+    }
+    throw new Error(`Tool ${name} does not support a known MCP method.`);
   }
 
   registerDefaultTools(): void {
-    const fetchCheerio = new FetchCheerioScraper();
-    this.registerTool(fetchCheerio);
-
-    const playwrightScraper = new PlaywrightScraper();
-    this.registerTool(playwrightScraper);
+    // Register all MCP-compliant tools
+    this.registerTool(new FetchCheerioScraper());
+    this.registerTool(new PlaywrightScraper());
+    this.registerTool(new ProxyManagerTool());
+    this.registerTool(new AntiBlockingTool());
   }
 }
 

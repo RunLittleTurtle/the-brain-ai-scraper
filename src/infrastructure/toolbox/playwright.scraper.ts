@@ -1,17 +1,37 @@
 // src/infrastructure/toolbox/playwright.scraper.ts
-import { chromium } from 'playwright-extra'; // Use playwright-extra for launching with plugins
-import { Browser, Page, BrowserContext } from 'playwright'; // Import types from core playwright
-import StealthPlugin from 'puppeteer-extra-plugin-stealth'; // Correct package
+import { chromium, Browser, Page, BrowserContext } from 'playwright'; // Use official Playwright for launching Chromium
+
 import { IScraperTool, ToolExecutionResult } from '../execution/tool.interface.js';
 import { ScraperToolConfiguration, SelectorResult, UniversalConfigurationPackageFormatV1 } from '../../core/domain/configuration-package.types.js';
 
-// Apply the stealth plugin
-chromium.use(StealthPlugin());
 
 export class PlaywrightScraper implements IScraperTool {
-    readonly toolId = 'scraper:playwright_stealth_v1';
-    readonly name = 'Playwright + Stealth Scraper';
-    readonly description = 'Fetches and renders pages using Playwright (Chromium) with stealth plugin to extract data.';
+  /**
+   * MCP-compliant tool definition for LLM discovery and developer clarity.
+   */
+  static getMcpDefinition() {
+    return {
+      name: "scraper_playwright_stealth_v1",
+      description: "IScraperTool: Scrapes dynamic web pages by executing JavaScript using Playwright (Chromium).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          url: { type: "string", description: "Target URL to scrape" },
+          selectors: { type: "object", description: "Key-value pairs of output field and selector" },
+          attribute: { type: "string", enum: ["innerText", "html", "value"], description: "What to extract from selector (default: innerText)" },
+          timeout_ms: { type: "number", description: "Optional timeout in milliseconds" }
+        },
+        required: ["url", "selectors"]
+      },
+      annotations: {
+        title: "Dynamic Web Scraper (Playwright)",
+        openWorldHint: true
+      }
+    };
+  }
+    readonly toolId = 'scraper_playwright_stealth_v1';
+    readonly name = 'Playwright Scraper';
+    readonly description = 'Fetches and renders pages using Playwright (Chromium) to extract data.';
     private logger = console; // Basic logger
     private config: ScraperToolConfiguration | null = null;
     private browser: Browser | null = null;

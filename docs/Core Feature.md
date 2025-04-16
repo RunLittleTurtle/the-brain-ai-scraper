@@ -163,7 +163,7 @@ The Brain doesn't just pick *one* scraper; it assembles a *package* by combining
 
 
 
-## Inspiration for Promp of the core Brain
+## Inspiration for Prompt of the core Brain
 
 Implementing the adaptive core of The Brain API, particularly the refinement loop with tool-switching and knowledge base integration, is a significant engineering challenge requiring careful design of the LLM interaction, the modular architecture, and the data formats. However, this capability is precisely what offers the potential for a truly intelligent and user-friendly autonomous scraping solution. Prioritizing the foundational elements (Universal Configuration Package Format, Modular Framework, basic LLM build/refine) before advanced features like the Knowledge Base or extensive toolsets is crucial for a successful implementation in TypeScript.
 

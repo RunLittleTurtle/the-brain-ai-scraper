@@ -28,6 +28,7 @@ export namespace $Enums {
   GENERATING_SAMPLES: 'GENERATING_SAMPLES',
   PENDING_USER_FEEDBACK: 'PENDING_USER_FEEDBACK',
   CONFIRMED: 'CONFIRMED',
+  ANALYSIS_FAILED: 'ANALYSIS_FAILED',
   FAILED: 'FAILED',
   PROCESSING_FEEDBACK: 'PROCESSING_FEEDBACK'
 };
@@ -907,7 +908,7 @@ export namespace Prisma {
     userObjective: string | null
     status: $Enums.BuildStatus | null
     error: string | null
-    tempPackageJson: string | null
+    initialPackageJson: string | null
     sampleResultsJson: string | null
     finalConfigurationJson: string | null
     createdAt: Date | null
@@ -921,7 +922,7 @@ export namespace Prisma {
     userObjective: string | null
     status: $Enums.BuildStatus | null
     error: string | null
-    tempPackageJson: string | null
+    initialPackageJson: string | null
     sampleResultsJson: string | null
     finalConfigurationJson: string | null
     createdAt: Date | null
@@ -935,7 +936,7 @@ export namespace Prisma {
     userObjective: number
     status: number
     error: number
-    tempPackageJson: number
+    initialPackageJson: number
     sampleResultsJson: number
     finalConfigurationJson: number
     createdAt: number
@@ -951,7 +952,7 @@ export namespace Prisma {
     userObjective?: true
     status?: true
     error?: true
-    tempPackageJson?: true
+    initialPackageJson?: true
     sampleResultsJson?: true
     finalConfigurationJson?: true
     createdAt?: true
@@ -965,7 +966,7 @@ export namespace Prisma {
     userObjective?: true
     status?: true
     error?: true
-    tempPackageJson?: true
+    initialPackageJson?: true
     sampleResultsJson?: true
     finalConfigurationJson?: true
     createdAt?: true
@@ -979,7 +980,7 @@ export namespace Prisma {
     userObjective?: true
     status?: true
     error?: true
-    tempPackageJson?: true
+    initialPackageJson?: true
     sampleResultsJson?: true
     finalConfigurationJson?: true
     createdAt?: true
@@ -1066,7 +1067,7 @@ export namespace Prisma {
     userObjective: string
     status: $Enums.BuildStatus
     error: string | null
-    tempPackageJson: string | null
+    initialPackageJson: string | null
     sampleResultsJson: string | null
     finalConfigurationJson: string | null
     createdAt: Date
@@ -1097,7 +1098,7 @@ export namespace Prisma {
     userObjective?: boolean
     status?: boolean
     error?: boolean
-    tempPackageJson?: boolean
+    initialPackageJson?: boolean
     sampleResultsJson?: boolean
     finalConfigurationJson?: boolean
     createdAt?: boolean
@@ -1111,7 +1112,7 @@ export namespace Prisma {
     userObjective?: boolean
     status?: boolean
     error?: boolean
-    tempPackageJson?: boolean
+    initialPackageJson?: boolean
     sampleResultsJson?: boolean
     finalConfigurationJson?: boolean
     createdAt?: boolean
@@ -1125,7 +1126,7 @@ export namespace Prisma {
     userObjective?: boolean
     status?: boolean
     error?: boolean
-    tempPackageJson?: boolean
+    initialPackageJson?: boolean
     sampleResultsJson?: boolean
     finalConfigurationJson?: boolean
     createdAt?: boolean
@@ -1139,14 +1140,14 @@ export namespace Prisma {
     userObjective?: boolean
     status?: boolean
     error?: boolean
-    tempPackageJson?: boolean
+    initialPackageJson?: boolean
     sampleResultsJson?: boolean
     finalConfigurationJson?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type BuildOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "targetUrls" | "userObjective" | "status" | "error" | "tempPackageJson" | "sampleResultsJson" | "finalConfigurationJson" | "createdAt" | "updatedAt", ExtArgs["result"]["build"]>
+  export type BuildOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "targetUrls" | "userObjective" | "status" | "error" | "initialPackageJson" | "sampleResultsJson" | "finalConfigurationJson" | "createdAt" | "updatedAt", ExtArgs["result"]["build"]>
 
   export type $BuildPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Build"
@@ -1158,7 +1159,7 @@ export namespace Prisma {
       userObjective: string
       status: $Enums.BuildStatus
       error: string | null
-      tempPackageJson: string | null
+      initialPackageJson: string | null
       sampleResultsJson: string | null
       finalConfigurationJson: string | null
       createdAt: Date
@@ -1592,7 +1593,7 @@ export namespace Prisma {
     readonly userObjective: FieldRef<"Build", 'String'>
     readonly status: FieldRef<"Build", 'BuildStatus'>
     readonly error: FieldRef<"Build", 'String'>
-    readonly tempPackageJson: FieldRef<"Build", 'String'>
+    readonly initialPackageJson: FieldRef<"Build", 'String'>
     readonly sampleResultsJson: FieldRef<"Build", 'String'>
     readonly finalConfigurationJson: FieldRef<"Build", 'String'>
     readonly createdAt: FieldRef<"Build", 'DateTime'>
@@ -1979,7 +1980,7 @@ export namespace Prisma {
     userObjective: 'userObjective',
     status: 'status',
     error: 'error',
-    tempPackageJson: 'tempPackageJson',
+    initialPackageJson: 'initialPackageJson',
     sampleResultsJson: 'sampleResultsJson',
     finalConfigurationJson: 'finalConfigurationJson',
     createdAt: 'createdAt',
@@ -2051,7 +2052,7 @@ export namespace Prisma {
     userObjective?: StringFilter<"Build"> | string
     status?: EnumBuildStatusFilter<"Build"> | $Enums.BuildStatus
     error?: StringNullableFilter<"Build"> | string | null
-    tempPackageJson?: StringNullableFilter<"Build"> | string | null
+    initialPackageJson?: StringNullableFilter<"Build"> | string | null
     sampleResultsJson?: StringNullableFilter<"Build"> | string | null
     finalConfigurationJson?: StringNullableFilter<"Build"> | string | null
     createdAt?: DateTimeFilter<"Build"> | Date | string
@@ -2065,7 +2066,7 @@ export namespace Prisma {
     userObjective?: SortOrder
     status?: SortOrder
     error?: SortOrderInput | SortOrder
-    tempPackageJson?: SortOrderInput | SortOrder
+    initialPackageJson?: SortOrderInput | SortOrder
     sampleResultsJson?: SortOrderInput | SortOrder
     finalConfigurationJson?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -2082,7 +2083,7 @@ export namespace Prisma {
     userObjective?: StringFilter<"Build"> | string
     status?: EnumBuildStatusFilter<"Build"> | $Enums.BuildStatus
     error?: StringNullableFilter<"Build"> | string | null
-    tempPackageJson?: StringNullableFilter<"Build"> | string | null
+    initialPackageJson?: StringNullableFilter<"Build"> | string | null
     sampleResultsJson?: StringNullableFilter<"Build"> | string | null
     finalConfigurationJson?: StringNullableFilter<"Build"> | string | null
     createdAt?: DateTimeFilter<"Build"> | Date | string
@@ -2096,7 +2097,7 @@ export namespace Prisma {
     userObjective?: SortOrder
     status?: SortOrder
     error?: SortOrderInput | SortOrder
-    tempPackageJson?: SortOrderInput | SortOrder
+    initialPackageJson?: SortOrderInput | SortOrder
     sampleResultsJson?: SortOrderInput | SortOrder
     finalConfigurationJson?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -2116,7 +2117,7 @@ export namespace Prisma {
     userObjective?: StringWithAggregatesFilter<"Build"> | string
     status?: EnumBuildStatusWithAggregatesFilter<"Build"> | $Enums.BuildStatus
     error?: StringNullableWithAggregatesFilter<"Build"> | string | null
-    tempPackageJson?: StringNullableWithAggregatesFilter<"Build"> | string | null
+    initialPackageJson?: StringNullableWithAggregatesFilter<"Build"> | string | null
     sampleResultsJson?: StringNullableWithAggregatesFilter<"Build"> | string | null
     finalConfigurationJson?: StringNullableWithAggregatesFilter<"Build"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Build"> | Date | string
@@ -2130,7 +2131,7 @@ export namespace Prisma {
     userObjective: string
     status?: $Enums.BuildStatus
     error?: string | null
-    tempPackageJson?: string | null
+    initialPackageJson?: string | null
     sampleResultsJson?: string | null
     finalConfigurationJson?: string | null
     createdAt?: Date | string
@@ -2144,7 +2145,7 @@ export namespace Prisma {
     userObjective: string
     status?: $Enums.BuildStatus
     error?: string | null
-    tempPackageJson?: string | null
+    initialPackageJson?: string | null
     sampleResultsJson?: string | null
     finalConfigurationJson?: string | null
     createdAt?: Date | string
@@ -2158,7 +2159,7 @@ export namespace Prisma {
     userObjective?: StringFieldUpdateOperationsInput | string
     status?: EnumBuildStatusFieldUpdateOperationsInput | $Enums.BuildStatus
     error?: NullableStringFieldUpdateOperationsInput | string | null
-    tempPackageJson?: NullableStringFieldUpdateOperationsInput | string | null
+    initialPackageJson?: NullableStringFieldUpdateOperationsInput | string | null
     sampleResultsJson?: NullableStringFieldUpdateOperationsInput | string | null
     finalConfigurationJson?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -2172,7 +2173,7 @@ export namespace Prisma {
     userObjective?: StringFieldUpdateOperationsInput | string
     status?: EnumBuildStatusFieldUpdateOperationsInput | $Enums.BuildStatus
     error?: NullableStringFieldUpdateOperationsInput | string | null
-    tempPackageJson?: NullableStringFieldUpdateOperationsInput | string | null
+    initialPackageJson?: NullableStringFieldUpdateOperationsInput | string | null
     sampleResultsJson?: NullableStringFieldUpdateOperationsInput | string | null
     finalConfigurationJson?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -2186,7 +2187,7 @@ export namespace Prisma {
     userObjective: string
     status?: $Enums.BuildStatus
     error?: string | null
-    tempPackageJson?: string | null
+    initialPackageJson?: string | null
     sampleResultsJson?: string | null
     finalConfigurationJson?: string | null
     createdAt?: Date | string
@@ -2200,7 +2201,7 @@ export namespace Prisma {
     userObjective?: StringFieldUpdateOperationsInput | string
     status?: EnumBuildStatusFieldUpdateOperationsInput | $Enums.BuildStatus
     error?: NullableStringFieldUpdateOperationsInput | string | null
-    tempPackageJson?: NullableStringFieldUpdateOperationsInput | string | null
+    initialPackageJson?: NullableStringFieldUpdateOperationsInput | string | null
     sampleResultsJson?: NullableStringFieldUpdateOperationsInput | string | null
     finalConfigurationJson?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -2214,7 +2215,7 @@ export namespace Prisma {
     userObjective?: StringFieldUpdateOperationsInput | string
     status?: EnumBuildStatusFieldUpdateOperationsInput | $Enums.BuildStatus
     error?: NullableStringFieldUpdateOperationsInput | string | null
-    tempPackageJson?: NullableStringFieldUpdateOperationsInput | string | null
+    initialPackageJson?: NullableStringFieldUpdateOperationsInput | string | null
     sampleResultsJson?: NullableStringFieldUpdateOperationsInput | string | null
     finalConfigurationJson?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -2279,7 +2280,7 @@ export namespace Prisma {
     userObjective?: SortOrder
     status?: SortOrder
     error?: SortOrder
-    tempPackageJson?: SortOrder
+    initialPackageJson?: SortOrder
     sampleResultsJson?: SortOrder
     finalConfigurationJson?: SortOrder
     createdAt?: SortOrder
@@ -2293,7 +2294,7 @@ export namespace Prisma {
     userObjective?: SortOrder
     status?: SortOrder
     error?: SortOrder
-    tempPackageJson?: SortOrder
+    initialPackageJson?: SortOrder
     sampleResultsJson?: SortOrder
     finalConfigurationJson?: SortOrder
     createdAt?: SortOrder
@@ -2307,7 +2308,7 @@ export namespace Prisma {
     userObjective?: SortOrder
     status?: SortOrder
     error?: SortOrder
-    tempPackageJson?: SortOrder
+    initialPackageJson?: SortOrder
     sampleResultsJson?: SortOrder
     finalConfigurationJson?: SortOrder
     createdAt?: SortOrder

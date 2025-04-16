@@ -5,13 +5,15 @@
 **1. Core Context (ALWAYS Reference):**
 
 - **Tech Stack:** TypeScript, Node.js, Fastify (API), Prisma (ORM), Podman (for services during dev). *[Human: Keep this updated if stack changes]*
-- **Feature Checklist/Tracker:** $$*Human: Insert link or reference to your Kanban board/tracker here*] - This defines priorities (P0 > P1 > P2 > P3) and feature requirements.
+- **Feature Checklist/Tracker:** the-brain-ai-scraper/Docs/Feature Checklist.md - This defines priorities (P0 > P1 > P2 > P3) and feature requirements.
 - **Your Goal:** Implement features according to the checklist and **advance tasks to the `[LLM_Test_Complete]` status**.
 
 **2. Security First:**
 
 - **Secrets:** NEVER hardcode secrets (API keys, passwords). Write code that reads secrets ONLY from **environment variables**. If a value isn't known, use a clear placeholder like `process.env.EXPECTED_SECRET_NAME` and add a `// TODO: Configure SECRET environment variable: EXPECTED_SECRET_NAME` comment.
 - **Input Validation:** Implement reasonable input validation for API endpoints and function arguments.
+- **Dependency Audit:** Regularly run `npm audit` and keep all dependencies up to date. Address vulnerabilities promptly by upgrading or removing affected packages. Remove unused dependencies as part of regular maintenance.
+- **Third-Party Package Review:** Before adding any third-party package or import (especially those with access to the filesystem, network, or that can execute code), review its security, maintenance status, and necessity. Avoid unnecessary or risky dependencies.
 
 **3. Code Quality:**
 

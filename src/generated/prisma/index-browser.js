@@ -121,7 +121,7 @@ exports.Prisma.BuildScalarFieldEnum = {
   userObjective: 'userObjective',
   status: 'status',
   error: 'error',
-  tempPackageJson: 'tempPackageJson',
+  initialPackageJson: 'initialPackageJson',
   sampleResultsJson: 'sampleResultsJson',
   finalConfigurationJson: 'finalConfigurationJson',
   createdAt: 'createdAt',
@@ -142,6 +142,7 @@ exports.BuildStatus = exports.$Enums.BuildStatus = {
   GENERATING_SAMPLES: 'GENERATING_SAMPLES',
   PENDING_USER_FEEDBACK: 'PENDING_USER_FEEDBACK',
   CONFIRMED: 'CONFIRMED',
+  ANALYSIS_FAILED: 'ANALYSIS_FAILED',
   FAILED: 'FAILED',
   PROCESSING_FEEDBACK: 'PROCESSING_FEEDBACK'
 };

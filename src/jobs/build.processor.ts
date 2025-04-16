@@ -5,47 +5,31 @@ import { BuildRepository, IBuildRepository } from '../infrastructure/db/build.re
 import { ToolboxService } from '../infrastructure/toolbox/toolbox.service.js'; // Import ToolboxService
 import { FetchCheerioScraper } from '../infrastructure/toolbox/fetch-cheerio.scraper.js'; // Import Scraper
 import { PlaywrightScraper } from '../infrastructure/toolbox/playwright.scraper.js'; // Import Scraper
+// Import Analysis Service and Types
+import { AnalysisService } from '../modules/analysis/analysis.service.js';
+import { AnalysisInput, AnalysisResult } from '../modules/analysis/analysis.types.js';
 
-// --- Instantiate Prisma Client and Repository ---
-// TODO: Improve Prisma Client lifecycle management for background jobs
-const prisma = new PrismaClient();
-const buildRepository: IBuildRepository = new BuildRepository(prisma);
-
-// --- Instantiate Toolbox and Execution Engine ---
-const toolbox = new ToolboxService();
-// Register available tools
-toolbox.registerTool(new FetchCheerioScraper());
-toolbox.registerTool(new PlaywrightScraper());
-
-// Pass the toolbox to the engine
-const executionEngine = new ExecutionEngineService(toolbox);
-
-// --- Mock LLM Analysis (remains the same for now) --- 
-function generateMockPackage(objective: string, urls: string[]): UniversalConfigurationPackageFormatV1 {
-  console.log(`[BuildProcessor] Mock LLM generating package for objective: "${objective}"`);
-  // Extremely basic example: always use fetch_cheerio_v1 to get the page title
-  // A real implementation would involve complex LLM interaction
-  return {
-    schemaVersion: '1.0',
-    description: `Mock package for: ${objective}`,
-    scraper: {
-      tool_id: 'scraper:fetch_cheerio_v1',
-      parameters: {
-        selectors: { title: 'head > title' }, // Example: Extract page title
-        timeout_ms: 10000,
-      },
-    },
-    // No auxiliary tools in this simple mock
-  };
-}
+// --- Instantiate Prisma Client --- 
+// TODO: Improve Prisma Client lifecycle management & Inject this too!
+const prisma = new PrismaClient(); 
 
 /**
  * Processes a build job.
- * This function would typically be called by a job queue worker (e.g., BullMQ).
+ * Dependencies are injected.
  * @param jobId - The ID of the job being processed.
  * @param buildId - The ID of the build to process.
+ * @param buildRepository - Instance of BuildRepository.
+ * @param analysisService - Instance of AnalysisService.
+ * @param executionEngine - Instance of ExecutionEngineService.
  */
-export async function processBuildJob(jobId: string, buildId: string): Promise<void> {
+export async function processBuildJob(
+  jobId: string, 
+  buildId: string,
+  // Injected Dependencies:
+  buildRepository: IBuildRepository,
+  analysisService: AnalysisService,
+  executionEngine: ExecutionEngineService
+): Promise<void> {
   console.log(`[BuildProcessor] Starting job ${jobId} for build ${buildId}`);
 
   // Use repository to get build data
@@ -63,15 +47,53 @@ export async function processBuildJob(jobId: string, buildId: string): Promise<v
     return; 
   }
 
+  // --- Add check for empty targetUrlsList --- 
+  if (!build.targetUrlsList || build.targetUrlsList.length === 0) {
+    const failMsg = 'No target URLs provided';
+    console.warn(`[BuildProcessor] Build ${buildId} has no target URLs for sampling.`);
+    await buildRepository.updateBuildStatus(buildId, BuildStatus.FAILED, failMsg);
+    return;
+  }
+  // --- End check ---
+
   // Moved generatedPackage outside try for finally block access
   let generatedPackage: UniversalConfigurationPackageFormatV1 | null = null; 
 
   try {
-    // --- 1. Mock LLM Analysis & Tool Selection --- 
-    // Pass deserialized URLs to mock function
-    generatedPackage = generateMockPackage(build.userObjective, build.targetUrlsList);
-    // Store using repository
-    await buildRepository.updateTempPackage(buildId, generatedPackage);
+    // --- 1. LLM Analysis & Tool Selection --- 
+    // Use the real Analysis Service
+    // Status remains PENDING_ANALYSIS during this phase
+    console.log(`[BuildProcessor] Starting analysis phase for build ${buildId}`);
+    const analysisInput: AnalysisInput = {
+      buildId: build.id,
+      userObjective: build.userObjective,
+      targetUrls: build.targetUrlsList, // Use deserialized URLs
+    };
+    const analysisResult: AnalysisResult = await analysisService.analyzeBuildRequest(analysisInput);
+
+    if (!analysisResult.success || !analysisResult.package) {
+      console.error(`[BuildProcessor] Analysis failed for build ${buildId}: ${analysisResult.error}`);
+      // Update status using repository with failure reason
+      await buildRepository.updateBuildStatus(
+        buildId, 
+        BuildStatus.FAILED, 
+        `Analysis failed: ${analysisResult.error} (Reason: ${analysisResult.failureReason || 'unknown'})`
+      );
+      return; // Stop processing if analysis fails
+    }
+
+    // Analysis successful, store the temporary package
+    generatedPackage = analysisResult.package;
+    // Add null check for type safety, although logic ensures it's not null here
+    if (generatedPackage) {
+      await buildRepository.updateTempPackage(buildId, generatedPackage);
+      console.log(`[BuildProcessor] Analysis successful, temp package stored for build ${buildId}`);
+    } else {
+       // This case should technically not be reached due to the checks above
+       console.error(`[BuildProcessor] Internal error: generatedPackage is null after successful analysis for build ${buildId}`);
+       await buildRepository.updateBuildStatus(buildId, BuildStatus.FAILED, 'Internal error during analysis result handling');
+       return;
+    }
 
     // --- 2. Initial Sample Generation --- 
     // Update status using repository
@@ -86,25 +108,29 @@ export async function processBuildJob(jobId: string, buildId: string): Promise<v
     }
 
     console.log(`[BuildProcessor] Generating samples for ${sampleUrls.length} URLs for build ${buildId}`);
-    // Use the instantiated executionEngine
+    // Use the instantiated executionEngine and the package from analysis
+    // Add null check for type safety
+    if (!generatedPackage) {
+      // Should not happen if analysis succeeded and package was stored
+      console.error(`[BuildProcessor] Internal error: generatedPackage is null before sample generation for build ${buildId}`);
+      await buildRepository.updateBuildStatus(buildId, BuildStatus.FAILED, 'Internal error: Missing package for sample generation');
+      return;
+    }
     const executionResult = await executionEngine.executePackage(generatedPackage, sampleUrls);
 
     // --- 3. Store Results & Update Status --- 
-    // Store using repository
-    await buildRepository.updateSampleResults(buildId, executionResult);
-
-    let finalStatus: BuildStatus;
-    let finalError: string | undefined;
-
     if (executionResult.overallStatus === 'failed') {
-      finalStatus = BuildStatus.FAILED;
-      finalError = executionResult.error || 'Sample generation failed';
-    } else {
-      // Includes 'completed' and 'partial_success'
-      finalStatus = BuildStatus.PENDING_USER_FEEDBACK;
+      // If execution failed, update status to FAILED and skip storing sample results
+      await buildRepository.updateBuildStatus(
+        buildId,
+        BuildStatus.FAILED,
+        executionResult.error || 'Sample generation failed'
+      );
+      return;
     }
-    // Update status using repository
-    await buildRepository.updateBuildStatus(buildId, finalStatus, finalError);
+    // Only store sample results if execution succeeded (includes 'completed' and 'partial_success')
+    await buildRepository.updateSampleResults(buildId, executionResult);
+    await buildRepository.updateBuildStatus(buildId, BuildStatus.PENDING_USER_FEEDBACK);
 
     // Fetch final status for logging (optional)
     const finalBuildState = await buildRepository.findBuildById(buildId);
