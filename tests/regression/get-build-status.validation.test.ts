@@ -1,3 +1,5 @@
+process.env.MCP_RPC_URL = 'http://dummy-mcp-rpc-url';
+process.env.MCP_SSE_URL = 'http://dummy-mcp-sse-url';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { buildApp } from '../../src/app.js';
 import { FastifyInstance } from 'fastify';

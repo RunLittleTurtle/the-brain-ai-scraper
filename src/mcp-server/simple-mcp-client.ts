@@ -26,13 +26,20 @@ export class SimpleMCPClient {
       method: 'list_tools', 
       params: {}
     });
-    if (data.error) {
-        console.error('MCP Error (list_tools):', data.error);
-        throw new Error(`MCP Error: ${data.error.message} (Code: ${data.error.code})`);
+    // Type guard for expected MCP response structure
+    if (typeof data !== 'object' || data === null) {
+      throw new Error('MCP list_tools response is not an object');
     }
-    console.log('Received list_tools response:', data.result);
+    const hasError = Object.prototype.hasOwnProperty.call(data, 'error');
+    if (hasError && (data as any).error) {
+      const errObj = (data as any).error;
+      console.error('MCP Error (list_tools):', errObj);
+      throw new Error(`MCP Error: ${errObj.message} (Code: ${errObj.code})`);
+    }
+    const result = (data as any).result;
+    console.log('Received list_tools response:', result);
     // TODO: Add validation if necessary (e.g., using Zod)
-    return data.result as McpToolDefinition[];
+    return result as McpToolDefinition[];
   }
 
   async callTool(payload: McpInvokePayload): Promise<any> {
@@ -47,13 +54,20 @@ export class SimpleMCPClient {
         args: payload.input     // Map from McpInvokePayload
       }
     });
-    if (data.error) {
-        console.error('MCP Error (invoke_tool):', data.error);
-        throw new Error(`MCP Error: ${data.error.message} (Code: ${data.error.code})`);
+    // Type guard for expected MCP response structure
+    if (typeof data !== 'object' || data === null) {
+      throw new Error('MCP invoke_tool response is not an object');
     }
-    console.log('Received invoke_tool response:', data.result);
+    const hasError = Object.prototype.hasOwnProperty.call(data, 'error');
+    if (hasError && (data as any).error) {
+      const errObj = (data as any).error;
+      console.error('MCP Error (invoke_tool):', errObj);
+      throw new Error(`MCP Error: ${errObj.message} (Code: ${errObj.code})`);
+    }
+    const result = (data as any).result;
+    console.log('Received invoke_tool response:', result);
     // TODO: Add validation if necessary
-    return data.result;
+    return result;
   }
 
   subscribeEvents(onEvent: (event: McpEvent) => void): () => void {

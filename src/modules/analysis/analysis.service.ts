@@ -4,24 +4,27 @@ import { UniversalConfigurationPackageFormatV1 } from "../../core/domain/configu
 import { BuildStatus } from "../../generated/prisma/index.js"; 
 import { IBuildRepository } from "../../infrastructure/db/build.repository.js";
 import { OpenaiService } from "../../infrastructure/llm/openai.service.js"; 
+import { UnifiedOrchestrator, ToolCallInput, OrchestrationMode } from "../../orchestrator/orchestrator.interface.js";
 
 export class AnalysisService {
     private buildRepository: IBuildRepository;
     private toolbox: IToolbox;
     private openaiService: OpenaiService;
+    private orchestrator?: UnifiedOrchestrator;
 
-    constructor(buildRepository: IBuildRepository, toolbox: IToolbox, openaiService: OpenaiService) {
+    constructor(buildRepository: IBuildRepository, toolbox: IToolbox, openaiService: OpenaiService, orchestrator?: UnifiedOrchestrator) {
         this.buildRepository = buildRepository;
         this.toolbox = toolbox;
         this.openaiService = openaiService;
+        this.orchestrator = orchestrator;
         console.log("AnalysisService initialized");
     }
 
     /**
      * Analyzes the user's objective and target URLs to select initial tools and configuration.
-     * This is the core function to implement the LLM interaction.
+     * Supports classic and MCP orchestration modes.
      * @param input - The analysis input data.
-     * @returns The generated configuration package or null if analysis fails.
+     * @returns The generated configuration package or error result.
      */
     async analyzeBuildRequest(input: AnalysisInput): Promise<AnalysisResult> {
         console.log(`[AnalysisService] Starting analysis for build: ${input.buildId}`);
@@ -30,6 +33,40 @@ export class AnalysisService {
             // Status remains PENDING_ANALYSIS during this phase
             // await this.buildRepository.updateBuildStatus(input.buildId, BuildStatus.ANALYZING); // Removed: ANALYZING status doesn't exist
 
+            // Determine orchestration mode
+            const mode = (process.env.TOOL_ORCHESTRATION_MODE as OrchestrationMode) || 'classic';
+            if (mode === 'mcp') {
+                // --- MCP Mode: Use orchestrator for tool/package selection ---
+                if (!this.orchestrator) {
+                    const msg = '[AnalysisService] MCP mode requested but orchestrator not provided';
+                    console.error(msg);
+                    await this.buildRepository.updateBuildStatus(input.buildId, BuildStatus.FAILED, msg);
+                    return { success: false, error: msg, failureReason: 'llm_error' };
+                }
+                // TODO: Configure SECRET environment variable: MCP_API_KEY (handled in orchestrator/mcpClient)
+                const toolInput: ToolCallInput = {
+                    toolName: 'playwright_v1', // TODO: This should be dynamically selected or passed
+                    payload: { userObjective: input.userObjective, targetUrls: input.targetUrls },
+                    context: { buildId: input.buildId }
+                };
+                const result = await this.orchestrator.callTool(toolInput, 'mcp');
+                if (result.error) {
+                    console.error('[AnalysisService] MCP orchestrator error:', result.error);
+                    await this.buildRepository.updateBuildStatus(input.buildId, BuildStatus.FAILED, `MCP orchestrator error: ${result.error}`);
+                    return { success: false, error: `MCP orchestrator error: ${result.error}`, failureReason: 'llm_error' };
+                }
+                // Validate MCP output
+                const validation = this.validateGeneratedPackage(result.output);
+                if (!validation.isValid) {
+                    console.error(`[AnalysisService] MCP output failed validation: ${validation.error}`);
+                    await this.buildRepository.updateBuildStatus(input.buildId, BuildStatus.FAILED, `MCP output invalid: ${validation.error}`);
+                    return { success: false, error: `MCP output invalid: ${validation.error}`, failureReason: 'llm_error' };
+                }
+                console.log('[AnalysisService] MCP mode: package passed validation.');
+                return { success: true, package: result.output };
+            }
+
+            // --- Classic Mode (default): Use OpenAI service ---
             // --- TODO: Step 1: Fetch initial content from sample URLs (if needed by LLM) ---
             // This might involve a simple fetch or using a basic scraper tool temporarily.
             // Consider rate limiting and error handling for fetching.

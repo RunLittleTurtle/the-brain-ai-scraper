@@ -94,5 +94,6 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
     }
   });
 
-  return app as FastifyInstance; // Explicitly cast return type if necessary
+  // Cast to unknown first, then to custom FastifyInstance (with mcpService). This is safe after all plugins registered.
+  return app as unknown as FastifyInstance;
 }

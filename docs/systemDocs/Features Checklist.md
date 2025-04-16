@@ -27,15 +27,15 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 ### Feature: MCP-Native Tool Orchestration - P0 [LLM_In_Progress]
 - **Status:** `[LLM_In_Progress]` (Not fully testable; see sub-features)
 - **Sub-Features:**
-  - **1.1 Unified Orchestrator Interface** - [LLM_To_Do]
+  - **1.1 Unified Orchestrator Interface** - [LLM_Testing]
     - Implements a single interface/class to dispatch tool calls based on orchestration mode.
-  - **1.2 MCP Mode Implementation** - [LLM_To_Do]
+  - **1.2 MCP Mode Implementation** - [LLM_Testing]
     - Implements MCP protocol client for dynamic tool discovery/invocation.
     - [Blocked] by: 1.1
-  - **1.3 Dual Mode & Fallback Logic** - [LLM_To_Do]
+  - **1.3 Dual Mode & Fallback Logic** - [LLM_Testing]
     - Implements parallel execution, fallback, and logging.
     - [Blocked] by: 1.1, 1.2
-  - **1.4 Orchestrator Regression Tests** - [LLM_To_Do]
+  - **1.4 Orchestrator Regression Tests** - [LLM_Testing]
     - End-to-end and fallback tests for all modes.
     - [Blocked] by: 1.1, 1.2, 1.3
 
@@ -55,7 +55,7 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 - **Sub-Features:**
   - **2.1 AnalysisService Classic Mode** - [LLM_Test_Complete]
     - Classic mode logic and tests are complete.
-  - **2.2 AnalysisService MCP Mode** - [LLM_To_Do]
+  - **2.2 AnalysisService MCP Mode** - [LLM_In_Progress]
     - Integrate MCP mode with orchestrator.
     - [Blocked] by: 1.2
   - **2.3 AnalysisService Dual Mode** - [LLM_To_Do]

@@ -1,6 +1,8 @@
 // src/plugins/dependencies.plugin.ts
 import fp from 'fastify-plugin';
-import type { FastifyInstance } from '../types/fastify.js'; // Use augmented types
+// Use the custom FastifyInstance type, since we decorate mcpService
+import type { FastifyInstance as CustomFastifyInstance } from '../types/fastify.js'; // Use augmented types
+import type { FastifyInstance as BaseFastifyInstance } from 'fastify'; // Use base type for plugin signature
 import { McpService } from '../mcp-server/mcp.service.js';
 
 // Import other services if needed, e.g.:
@@ -9,7 +11,7 @@ import { McpService } from '../mcp-server/mcp.service.js';
 /**
  * This plugin instantiates and decorates application-wide services (dependencies).
  */
-async function dependenciesPlugin(fastify: FastifyInstance): Promise<void> {
+async function dependenciesPlugin(fastify: BaseFastifyInstance): Promise<void> {
   fastify.log.info('Registering dependencies plugin...');
 
   // --- McpService --- 
@@ -19,6 +21,8 @@ async function dependenciesPlugin(fastify: FastifyInstance): Promise<void> {
     // Decorate the instance onto Fastify
     fastify.decorate('mcpService', mcpServiceInstance);
     fastify.log.info('McpService decorated successfully.');
+    // After decoration, you can cast to the custom type if needed:
+    const customFastify = fastify as CustomFastifyInstance;
   } catch (error) {
     fastify.log.error({ err: error }, 'Failed to instantiate or decorate McpService.');
     // Decide if the application can proceed without this service

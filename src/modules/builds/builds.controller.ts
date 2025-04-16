@@ -5,9 +5,10 @@ import type {
     FastifyPluginAsync,
     FastifyRequest,
     FastifyReply,
-    FastifyInstance, 
+    FastifyInstance as CustomFastifyInstance, 
     FastifyPluginOptions 
 } from '../../types/fastify.js'; 
+import type { FastifyInstance as BaseFastifyInstance } from 'fastify';
 
 // --- Schemas --- //
 
@@ -55,7 +56,8 @@ interface GetBuildStatusRoute {
 
 // --- Controller Plugin --- //
 
-const buildsController: FastifyPluginAsync = async (fastify: FastifyInstance, opts: FastifyPluginOptions) => {
+// Use base FastifyInstance for plugin signature; cast to CustomFastifyInstance if/when mcpService is needed
+const buildsController: FastifyPluginAsync = async (fastify: BaseFastifyInstance, opts: FastifyPluginOptions) => {
 
     // POST /builds - Create a new build job
     fastify.post<CreateBuildRoute>(

@@ -13,7 +13,17 @@ import { execSync } from 'child_process';
 import path from 'path';
 import { PrismaClient } from '../../src/generated/prisma/index.js';
 import { processBuildJob } from '../../src/jobs/build.processor.js';
-import type { AnalysisResult } from '../../src/modules/analysis/analysis.types.js';// Local BuildStatus enum for test reliability
+import type { AnalysisResult } from '../../src/modules/analysis/analysis.types.js';
+import { UnifiedOrchestratorImpl } from '../../src/orchestrator/unifiedOrchestrator.js';
+// Local BuildStatus enum for test reliability
+
+// Orchestrator test constants (top-level)
+const orchestrator = new UnifiedOrchestratorImpl();
+const orchestratorInput = {
+  toolName: 'playwright_v1',
+  payload: { url: 'https://example.com' },
+  context: { user: 'test' }
+};
 // ... [rest of file unchanged] ...
 
 // --- Type Contract Regression ---
@@ -314,26 +324,33 @@ describe('The Brain App - Regression Suite (Test Freak Extensions)', () => {
     expect(reply.send).toHaveBeenCalledWith({ message: expect.stringContaining('Unauthorized') });
   });
 
-  // --- 2. Orchestration Mode Tests (Mocked) ---
-  it('should use classic orchestration mode when configured', async () => {
-    // Simulate config/env for classic mode
+  // --- 2. Orchestration Mode Tests (Real) ---
+  it('should use classic orchestration mode and return classic stub', async () => {
     process.env.TOOL_ORCHESTRATION_MODE = 'classic';
-    // Here, you would mock the orchestrator and assert classic path is called
-    // For now, just assert the env is set correctly
-    expect(process.env.TOOL_ORCHESTRATION_MODE).toBe('classic');
-    // TODO: Add orchestrator mock and assert classic mode logic
+    const result = await orchestrator.callTool(orchestratorInput, 'classic');
+    expect(result.mode).toBe('classic');
+    expect(result.output).toHaveProperty('calledTool', 'playwright_v1');
+    expect(result.output.note).toContain('classic');
+    expect(result.error).toBeUndefined();
   });
 
-  it('should use MCP orchestration mode when configured', async () => {
+  it('should use MCP orchestration mode and return MCP stub', async () => {
     process.env.TOOL_ORCHESTRATION_MODE = 'mcp';
-    expect(process.env.TOOL_ORCHESTRATION_MODE).toBe('mcp');
-    // TODO: Add orchestrator mock and assert MCP mode logic
+    const result = await orchestrator.callTool(orchestratorInput, 'mcp');
+    expect(result.mode).toBe('mcp');
+    expect(result.output).toHaveProperty('tool', 'playwright_v1');
+    expect(result.output.note).toContain('MCP');
+    expect(result.error).toBeUndefined();
   });
 
-  it('should fallback to classic if MCP fails', async () => {
+  it('should fallback to classic if MCP fails in dual mode', async () => {
     process.env.TOOL_ORCHESTRATION_MODE = 'both';
-    // TODO: Mock orchestrator to throw in MCP and assert fallback to classic
-    expect(process.env.TOOL_ORCHESTRATION_MODE).toBe('both');
+    const failInput = { ...orchestratorInput, toolName: 'throw_mcp' };
+    const result = await orchestrator.callTool(failInput, 'both');
+    expect(result.mode).toBe('both');
+    expect(result.output).toHaveProperty('calledTool', 'throw_mcp');
+    expect(result.output.note).toContain('classic');
+    expect(result.error).toBeUndefined();
   });
 
   // --- 3. Negative/Error Path Tests ---
