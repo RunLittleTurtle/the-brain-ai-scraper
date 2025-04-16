@@ -23,16 +23,15 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 ## 1. Core Build Lifecycle
 
 ### Feature: MCP-Native Tool Orchestration - P0 [LLM_In_Progress]
-- **Description:** Enable The Brain to support three internal tool orchestration modes: classic (direct function call), MCP (Model Context Protocol), and both (parallel execution for A/B testing). Add a config flag or environment variable (`TOOL_ORCHESTRATION_MODE=classic|mcp|both`) to select the orchestration mode. Implement a unified orchestrator interface that routes all tool calls through a single class, dispatching to classic, MCP, or both modes as configured. In classic mode, use a static registry or service class for tool invocation (e.g., `classicToolRegistry['toolName'](params)`). In MCP mode, use an MCP client to discover and invoke tools dynamically. In both mode, run both in parallel, log execution times, outputs, and errors, and record which mode performed best for each request. Implement automatic fallback: if the selected mode fails, the orchestrator should fall back to the other mode and log the event.
+- **Description:** Enable The Brain to support three internal tool orchestration modes: classic (direct function call), MCP (Model Context Protocol), and dual (parallel execution for A/B testing). Add a config flag or environment variable (`TOOL_ORCHESTRATION_MODE=classic|mcp|dual`) to select the orchestration mode. Implement a unified orchestrator interface that routes all tool calls through a single class, dispatching to classic, MCP, or dual modes as configured. In classic mode, use a static registry or service class for tool invocation (e.g., `classicToolRegistry['toolName'](params)`). In MCP mode, use an MCP client to discover and invoke tools dynamically. In dual mode, run both in parallel, log execution times, outputs, and errors, and record which mode performed best for each request. Implement automatic fallback: if the selected mode fails, the orchestrator should fall back to the other mode and log the event.
 - **Done Criteria:**
-  - Config flag/env var switches between classic, MCP, and both modes.
+  - Config flag/env var switches between classic, MCP, and dual modes.
   - Unified orchestrator interface in place for all tool calls.
   - Classic mode uses static registry/service class pattern.
   - MCP mode discovers/invokes tools via MCP protocol.
-  - Both mode runs both implementations in parallel, logs results and performance.
+  - Dual mode runs both implementations in parallel, logs results and performance.
   - Fallback logic is implemented and logged.
   - Documentation is updated to reflect conventions and usage.
-
 
 ### Feature: API Endpoint for Build Initiation (`POST /builds`) - P0 [Done]
 
@@ -300,3 +299,17 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
   - Triggers the "Initial Sample Generation" process using the *manually provided* package and a predefined set of sample URLs (or requires sample URLs in the request).
   - Returns `202 Accepted` with the `build_id`.
   - Allows users to bypass the LLM analysis/refinement loop for direct configuration testing or use cases where the LLM struggles. Build proceeds directly to user confirmation (`POST /builds/{id}/confirm`) after samples are reviewed via `GET /builds/{id}`.
+
+### Feature: MCP-Native Tool Orchestration - P0 [LLM_In_Progress]
+- **Description:** Enable The Brain to support three internal tool orchestration modes: classic (direct function call), MCP (Model Context Protocol), and dual (parallel execution for A/B testing). Add a config flag or environment variable (`TOOL_ORCHESTRATION_MODE=classic|mcp|dual`) to select the orchestration mode. Implement a unified orchestrator interface that routes all tool calls through a single class, dispatching to classic, MCP, or dual modes as configured. In classic mode, use a static registry or service class for tool invocation (e.g., `classicToolRegistry['toolName'](params)`). In MCP mode, use an MCP client to discover and invoke tools dynamically. In dual mode, run both in parallel, log execution times, outputs, and errors, and record which mode performed best for each request. Implement automatic fallback: if the selected mode fails, the orchestrator should fall back to the other mode and log the event.
+- **Done Criteria:**
+  - Config flag/env var switches between classic, MCP, and dual modes.
+  - Unified orchestrator interface in place for all tool calls.
+  - Classic mode uses static registry/service class pattern.
+  - MCP mode discovers/invokes tools via MCP protocol.
+  - Dual mode runs both implementations in parallel, logs results and performance.
+  - Fallback logic is implemented and logged.
+  - Documentation is updated to reflect conventions and usage.
+- **Decision:** Utilize the official `@modelcontextprotocol/sdk` package for types directly, removing local overrides to ensure alignment and resolve potential conflicts.
+
+### **[Testing_In_Progress]** Test Suite

@@ -1,22 +1,21 @@
-import { FastifyRequest, FastifyReply, HookHandlerDoneFunction } from 'fastify';
+import type { FastifyRequest, FastifyReply } from '../types/fastify.js';
 
 /**
  * Fastify preHandler hook to authenticate requests based on a static API key
  * provided in the Authorization header (Bearer scheme).
  * Reads the expected API key from the API_KEY environment variable.
  */
-export function apiKeyAuth(
+export async function apiKeyAuth(
     request: FastifyRequest,
-    reply: FastifyReply,
-    done: HookHandlerDoneFunction
-) {
-    const expectedKey = process.env.API_KEY;
+    reply: FastifyReply
+) : Promise<void> {
+    const apiKey = process.env.API_KEY;
 
     // Check if API_KEY is configured in the environment
-    if (!expectedKey) {
+    if (!apiKey) {
         request.log.error('API_KEY environment variable is not set. Authentication disabled.');
-        // In a real scenario, you might want to block all requests if the key isn't set
-        return reply.internalServerError('Server configuration error.');
+        reply.code(500).send({ message: 'Server configuration error: API_KEY not set.' });
+        return;
     }
 
     const authHeader = request.headers.authorization; // Fastify normalizes headers to lowercase
@@ -27,12 +26,12 @@ export function apiKeyAuth(
     }
 
     // Compare provided key with expected key
-    if (providedKey !== expectedKey) {
+    if (!providedKey || providedKey !== apiKey) {
         request.log.warn(`Unauthorized attempt: Provided key "${providedKey}"`);
         reply.code(401).send({ message: 'Unauthorized: Invalid or missing API key.' });
-        return; // Important: Stop processing further handlers
+        return;
     }
 
     // Authentication successful, proceed to the route handler
-    done();
+    // No explicit return needed; Fastify will continue to the next handler
 }

@@ -1,6 +1,6 @@
 import fp from 'fastify-plugin';
-import { FastifyPluginAsync, FastifyInstance } from 'fastify';
-import { PrismaClient } from '../generated/prisma/index.js'; // Adjust path if needed
+import type { FastifyPluginAsync, FastifyInstance } from '../types/fastify.js';
+import { PrismaClient } from '../generated/prisma/index.js';
 
 // Extend FastifyInstance with the prisma client
 declare module 'fastify' {
@@ -9,33 +9,46 @@ declare module 'fastify' {
   }
 }
 
-// Export the fp-wrapped plugin directly
-export default fp<Record<string, any>>(async (server: FastifyInstance, options: Record<string, any>) => {
+// Define the plugin using FastifyPluginAsync type
+const dbPlugin: FastifyPluginAsync = async (server: FastifyInstance, options: Record<string, unknown>) => {
   const prisma = new PrismaClient({
-    // Optional: Add logging configuration if needed
-    // log: ['query', 'info', 'warn', 'error'],
+    // Optionally configure logging
+    // log: [ { emit: 'event', level: 'query' }, 'info', 'warn', 'error'],
   });
+
+  // Optional: Log Prisma queries (can be verbose)
+  // prisma.$on('query', (e) => {
+  //   server.log.debug({ query: e.query, params: e.params, duration: e.duration }, 'Prisma query');
+  // });
 
   try {
-    // Optional: Test connection on startup
-    // await prisma.$connect();
-    // server.log.info('Prisma client connected successfully.');
+    await prisma.$connect();
+    // Use server.log
+    server.log.info('Prisma client connected successfully.');
+
+    // Decorate the Fastify instance with the Prisma client
+    // Use server.decorate
+    server.decorate('prisma', prisma);
+
+    // Add a hook to disconnect Prisma when the server closes
+    // Use server.addHook
+    server.addHook('onClose', async (instance: FastifyInstance) => {
+      // Use instance.log inside the hook
+      instance.log.info('Disconnecting Prisma client...');
+      await instance.prisma.$disconnect();
+      instance.log.info('Prisma client disconnected.');
+    });
+
   } catch (error) {
-    server.log.error('Failed to connect Prisma client:', error);
-    // Optionally, you might want to throw the error to prevent server startup
-    // throw error;
+    // Use server.log for errors during connection
+    server.log.error({ err: error }, 'Failed to connect Prisma client during plugin setup');
+    // Propagate the error to stop Fastify from starting if DB connection fails
+    throw error;
   }
+};
 
-  // Make Prisma Client available through the fastify instance
-  server.decorate('prisma', prisma);
-
-  // Add hook to disconnect Prisma Client when the server closes
-  server.addHook('onClose', async (instance: FastifyInstance) => {
-    instance.log.info('Disconnecting Prisma client...');
-    await instance.prisma.$disconnect();
-    instance.log.info('Prisma client disconnected.');
-  });
-}, { 
+// Export the plugin using fastify-plugin to avoid encapsulation issues
+export default fp(dbPlugin, { 
   fastify: '>=4.x', // Specify Fastify version compatibility
   name: 'prisma-plugin' // Optional but good practice plugin name 
 });

@@ -2,11 +2,11 @@ import { Static, Type } from '@sinclair/typebox';
 import { BuildStatus } from '../../generated/prisma/index.js';
 
 export const GetBuildStatusParamsSchema = Type.Object({
-  build_id: Type.String({ format: 'cuid', description: 'The unique ID assigned to the build.' })
+  build_id: Type.String({ description: 'The unique ID assigned to the build.' })
 });
 
 export const GetBuildStatusResponseSchema = Type.Object({
-  build_id: Type.String({ format: 'cuid' }),
+  build_id: Type.String(),
   status: Type.Enum(BuildStatus),
   error: Type.Optional(Type.String()),
   created_at: Type.String({ format: 'date-time' }),

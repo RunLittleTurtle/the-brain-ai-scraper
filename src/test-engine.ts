@@ -39,7 +39,7 @@ async function runTest() {
 
 
   // Instantiate the engine (or import a singleton instance if you set one up)
-  const executionEngine = new ExecutionEngineService(toolboxService); 
+  const executionEngine = new ExecutionEngineService(toolboxService, toolboxService); 
 
   try {
     // IMPORTANT: Ensure Playwright browsers are installed!

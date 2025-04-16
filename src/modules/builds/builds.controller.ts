@@ -1,101 +1,99 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '../../generated/prisma/index.js'; 
-import { BuildRepository, CreateBuildData } from '../../infrastructure/db/build.repository.js'; 
-import { processBuildJob } from '../../jobs/build.processor.js'; 
-import { createBuildSchema, CreateBuildBody } from './build.schema.js'; 
-import { apiKeyAuth } from '../../hooks/apiKeyAuth.js'; 
+import { Static, Type } from '@sinclair/typebox';
+import { PrismaClient, BuildStatus, Prisma } from '../../generated/prisma/index.js'; 
+import type {
+    FastifyPluginAsync,
+    FastifyRequest,
+    FastifyReply,
+    FastifyInstance,
+    FastifyPluginOptions
+} from '../../types/fastify.js';
 
-/**
- * Handles POST /builds requests
- */
-async function createBuildHandler(request: FastifyRequest, reply: FastifyReply) {
-    // Access Prisma client from the Fastify instance decorated by the plugin
-    const prisma: PrismaClient = request.server.prisma;
-    // Instantiate repository (could use DI in a larger app)
-    const buildRepository = new BuildRepository(prisma);
+// --- Schemas --- //
 
-    // Fastify types request.body based on the schema applied to the route
-    // Explicit type assertion can be used if needed, but often inference is sufficient
-    const { target_urls, user_objective } = request.body as CreateBuildBody;
+const CreateBuildBodySchema = Type.Object({
+    target_urls: Type.Array(Type.String({ format: 'uri' }), { minItems: 1, description: 'List of target URLs to process' }),
+    user_objective: Type.Optional(Type.String({ description: 'Optional user objective for the build' }))
+});
+type CreateBuildBody = Static<typeof CreateBuildBodySchema>;
 
-    // Basic validation (schema validation is primary)
-    if (!target_urls || target_urls.length === 0 || !user_objective) {
-        // Schema validation should catch this, but good practice
-        return reply.badRequest('Missing required fields: target_urls and user_objective');
-    }
+const CreateBuildResponseSchema = Type.Object({
+    build_id: Type.String({ format: 'uuid', description: 'The unique ID of the created build job' }),
+    message: Type.String()
+});
 
-    try {
-        const createData: CreateBuildData = {
-            targetUrls: target_urls,
-            userObjective: user_objective,
-        };
-
-        // Use repository to create the build record
-        const newBuild = await buildRepository.createBuild(createData);
-
-        // --- Trigger Background Job (Temporary direct async call) ---
-        // IMPORTANT: Replace this with a proper job queue enqueue later!
-        request.log.info(`[BuildsController] Triggering background job for build ${newBuild.id}`);
-        // TODO: Provide the required 5 arguments for processBuildJob
-        // For now, just call the job processor and handle errors
-        try {
-            // Example: processBuildJob('job-' + newBuild.id, newBuild.id, ...)
-            // await processBuildJob('job-' + newBuild.id, newBuild.id, ...);
-        } catch (err) {
-            // Basic error handling for the async job trigger itself
-            request.log.error(`Error triggering background job for build ${newBuild.id}:`, err);
-            // Option 1: Update build status to FAILED immediately
-            // Option 2: Log and rely on monitoring/retries (if queue exists)
-            await buildRepository.updateBuildStatus(newBuild.id, 'FAILED', 'Failed to trigger processing job').catch(updateErr => {
-                request.log.error(`Failed to update build status after job trigger error for ${newBuild.id}:`, updateErr);
-            });
-        }
-        // --- End Temporary Trigger ---
-
-        // Return 202 Accepted with the build ID
-        return reply.code(202).send({
-            message: "Build request accepted and processing started.",
-            build_id: newBuild.id,
-            status: newBuild.status // Initial status (e.g., PENDING_ANALYSIS)
-        });
-
-    } catch (error: any) {
-        request.log.error('Error creating build in handler:', error);
-        // Use sensible plugin's error handling for internal server errors
-        return reply.internalServerError('Failed to initiate build process.');
-    }
+// --- Route Type Interface --- //
+interface CreateBuildRoute {
+    Body: CreateBuildBody;
+    Reply: Static<typeof CreateBuildResponseSchema>;
 }
 
-/**
- * Defines routes for the /builds endpoint
- */
-import { getBuildStatusHandler } from './get-build-status.handler.js';
-import { getBuildStatusSchema, GetBuildStatusParams } from './get-build-status.schema.js';
+// --- Controller Plugin --- //
 
-export default async function (fastify: FastifyInstance) {
+const buildsController: FastifyPluginAsync = async (fastify: FastifyInstance, opts: FastifyPluginOptions) => {
 
-    // Create a new build request
-    fastify.post('/',
+    // POST /builds - Create a new build job
+    fastify.post<CreateBuildRoute>(
+        '/',
         {
-            schema: createBuildSchema, // Apply schema validation
-            preHandler: [apiKeyAuth] // Apply API key authentication
+            schema: { 
+                description: 'Initiates a new build job with the provided target URLs and objective.',
+                tags: ['Builds'],
+                summary: 'Create New Build Job',
+                body: CreateBuildBodySchema,
+                response: {
+                    201: CreateBuildResponseSchema,
+                    400: Type.Object({ message: Type.String() }),
+                    500: Type.Object({ message: Type.String() })
+                }
+            }
         },
-        createBuildHandler
+        async (request: FastifyRequest<CreateBuildRoute>, reply: FastifyReply) => {
+            const prisma: PrismaClient = fastify.prisma;
+            const { target_urls, user_objective } = request.body;
+
+            if (!Array.isArray(target_urls) || target_urls.length === 0) {
+                return reply.badRequest('target_urls must be a non-empty array.');
+            }
+
+            try {
+                const targetUrlsJson = JSON.stringify(target_urls);
+
+                const buildData: Prisma.BuildCreateInput = {
+                    targetUrls: targetUrlsJson,
+                    userObjective: typeof user_objective === 'undefined' ? null : user_objective,
+                    status: BuildStatus.PENDING_ANALYSIS, 
+                };
+
+                const newBuild = await prisma.build.create({ data: buildData });
+
+                fastify.log.info(`Build job ${newBuild.id} created. Triggering analysis...`);
+
+                return reply.status(201).send({
+                    build_id: newBuild.id,
+                    message: 'Build job created successfully and analysis initiated.',
+                });
+
+            } catch (error: any) {
+                fastify.log.error('Error creating build job:', error);
+                if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                     fastify.log.warn(`Prisma Error creating build: ${error.code}`);
+                     return reply.internalServerError('Database error occurred while creating build job.');
+                } else if (error instanceof SyntaxError && error.message.includes('JSON')) {
+                     return reply.internalServerError('Internal error processing URLs.');
+                }
+                return reply.internalServerError('An unexpected error occurred while creating the build job.');
+            }
+        }
     );
 
-    // Get build status and samples
-    fastify.get<{ Params: GetBuildStatusParams }>('/:build_id', {
-        schema: getBuildStatusSchema,
-        preHandler: [apiKeyAuth],
-    }, getBuildStatusHandler);
-
-    // Handle unsupported methods on /builds route
+    // Default handler for unhandled methods on /builds
     fastify.route({
-        method: ['GET', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'], 
+        method: ['GET', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
         url: '/',
-        preHandler: [apiKeyAuth], // Keep authentication for consistency
-        handler: async (request, reply) => {
-            return reply.methodNotAllowed(); // Use sensible's helper
-        },
+        handler: async (request: FastifyRequest, reply: FastifyReply) => {
+            reply.methodNotAllowed();
+        }
     });
-}
+};
+
+export default buildsController;

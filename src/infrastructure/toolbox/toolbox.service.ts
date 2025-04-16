@@ -5,14 +5,14 @@ import { PlaywrightScraper } from './playwright.scraper.js';
 import { ProxyManagerTool } from './proxy-manager.tool.js';
 import { AntiBlockingTool } from './anti-blocking.tool.js';
 
-// MCP tool definition type
+// MCP tool definition type (This might become redundant if SDK provides a usable type directly)
 export interface McpToolDefinition {
-  name: string;
+  id: string;
+  name?: string;
   description?: string;
-  inputSchema: object;
+  inputSchema?: Record<string, any>; // Consider using a more specific type like JSONSchema7
   annotations?: Record<string, any>;
 }
-
 
 /**
  * Concrete implementation of the IToolbox interface.
@@ -34,17 +34,31 @@ export class ToolboxService implements IToolbox {
   registerTool(tool: ITool): void {
     // Use MCP definition if available
     const getDef = (tool.constructor as any).getMcpDefinition;
-    const mcp = typeof getDef === 'function' ? getDef.call(tool.constructor) : {
-      name: tool.toolId,
-      description: tool.description || '',
+    const mcp: McpToolDefinition = typeof getDef === 'function' ? getDef.call(tool.constructor) : {
+      id: tool.toolId ?? '', // Provide fallback
+      name: tool.toolId ?? '', // Provide fallback
+      description: tool.description ?? '', // Provide fallback
       inputSchema: {},
       annotations: {}
     };
-    if (this.tools.has(mcp.name)) {
-      this.logger.warn(`Tool with MCP name '${mcp.name}' is already registered. Overwriting.`);
+    // Adjust name if MCP def provided a different one
+    if (typeof getDef === 'function') {
+        const sdkDef = getDef.call(tool.constructor);
+        mcp.name = sdkDef.name || tool.toolId;
+        // Assign other properties from sdkDef if needed and present in local interface
+        mcp.description = sdkDef.description || tool.description || '';
+        mcp.inputSchema = sdkDef.inputSchema || {};
+        mcp.annotations = sdkDef.annotations || {};
     }
-    this.logger.log(`Registering tool: ${mcp.name} (${tool.name || 'Unnamed Tool'})`);
-    this.tools.set(mcp.name, { instance: tool, mcp });
+
+    // Ensure the map key is a string, falling back to id if name is undefined
+    const mapKey = mcp.name ?? mcp.id;
+
+    if (this.tools.has(mapKey)) {
+      this.logger.warn(`Tool with MCP name '${mapKey}' is already registered. Overwriting.`);
+    }
+    this.logger.log(`Registering tool: ${mapKey} (${tool.name || 'Unnamed Tool'})`);
+    this.tools.set(mapKey, { instance: tool, mcp });
   }
 
   /**

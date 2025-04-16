@@ -58,12 +58,14 @@ Example Format:
   
   "scraper": {
     "toolId": "scraper:playwright_stealth_v1", // Choose the best tool ID from the list
-    "selectors": {
-      "field1": "css_selector_for_field1",
-      "field2": "css_selector_for_field2"
-      // ... add more fields based on description
+    "parameters": { 
+      "selectors": {
+        "field1": "css_selector_for_field1",
+        "field2": "css_selector_for_field2"
+        // ... add more fields based on description
+      }
+      // Add other tool-specific configurations if needed (e.g., waitTimes, interactionSteps)
     }
-    // Add other tool-specific configurations if needed (e.g., waitTimes, interactionSteps)
   },
   "postProcessing": [],
   "delivery": {}

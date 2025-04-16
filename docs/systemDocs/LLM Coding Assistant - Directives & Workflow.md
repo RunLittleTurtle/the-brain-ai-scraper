@@ -8,7 +8,7 @@ This document is the single source of truth for the LLM coding assistant. The LL
 
 ## 1. Core Context (ALWAYS Reference):
 
-- **Tech Stack:** TypeScript, Node.js, Fastify (API), Prisma (ORM), Podman (for services during dev), **MCP (Model Context Protocol)**. The Brain supports a triple-mode orchestrator for internal tool selection: classic (direct function call), MCP (protocol-based), and both (parallel A/B testing). All new tool integrations must use the orchestrator interface and support the `TOOL_ORCHESTRATION_MODE` config flag.
+- **Tech Stack:** TypeScript, Node.js, Fastify (API), Prisma (ORM), Podman (for services during dev), **MCP SDK (Model Context Protocol)**. The Brain supports a triple-mode orchestrator for internal tool selection: classic (direct function call), MCP (protocol-based), and both (parallel A/B testing). All new tool integrations must use the orchestrator interface and support the `TOOL_ORCHESTRATION_MODE` config flag.
 - **Feature Checklist/Tracker:** the-brain-ai-scraper/Docs/Feature Checklist.md - This defines priorities (P0 > P1 > P2 > P3) and feature requirements.
 - **Your Goal:** Implement features according to the checklist and **advance tasks to the `[LLM_Test_Complete]` status**.
 
@@ -38,9 +38,9 @@ This document is the single source of truth for the LLM coding assistant. The LL
   - `[Human_Review]` -> `[Done]` (Human confirms ALL criteria met)
   - `[Human_Review]` -> `[LLM_In_Progress]` (Human rejects; provides feedback. Remove `_Test_Complete` tag.)
 
-## 5. Testing Protocol:
+## 5. Testing Protocol Vitest:
 
-- Before moving from `[LLM_In_Progress]` to `[LLM_Testing]`, define and attempt basic tests for the code you generated (unit tests, simple integration checks, or describe the manual test steps you would perform).
+- Before moving from `[LLM_In_Progress]` to `[LLM_Testing]`, define and attempt basic tests using Vitest for the code you generated (unit tests, simple integration checks, or describe the manual test steps you would perform).
 - Execute these tests.
 - **Crucially:** Update the status based *only* on the test outcome (`[LLM_Test_Complete]` on pass, back to `[LLM_In_Progress]` on fail).
 
@@ -56,8 +56,13 @@ This document is the single source of truth for the LLM coding assistant. The LL
 
 - Once a task is `[LLM_Test_Complete]`, **clearly state this** to the Human Operator and wait for their review or further instructions. **Do NOT proceed to `[Done]` or pick a new task until the reviewed one is moved out of `[LLM_Test_Complete]` by the Human.**
 
-## 8. Always use extensionless imports for local TypeScript files in this project.
-**TypeScript Import Paths:**
-- For all local imports, use extensionless paths (e.g., `import { X } from './foo'`) in `.ts` files.
-- Do **not** use `.js` or `.ts` extensions unless the project is migrated to ESM and requires `.js` at runtime.
-- This ensures compatibility with TypeScript's module resolution and avoids recurring import errors.
+## 8. TypeScript Import Paths (MANDATORY)
+
+**Requirement:** Due to the project's ES Module configuration (`"type": "module"` in `package.json` and `"moduleResolution": "NodeNext"` or similar in `tsconfig.json`), you **MUST** use explicit `.js` extensions for all relative imports between local TypeScript (`.ts`) files.
+
+**Correct Example:** `import { MyService } from './my.service.js';`
+**Incorrect Example:** `import { MyService } from './my.service';`
+
+**Reasoning:** This is required for Node.js to correctly resolve modules at runtime when using ES Modules. Failure to include the `.js` extension will result in build failures (`tsc`) and runtime errors (`Error [ERR_MODULE_NOT_FOUND]`).
+
+**Do NOT use extensionless imports for local files.** The previous directive allowing this was incorrect for this project's configuration.

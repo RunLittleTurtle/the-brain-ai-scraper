@@ -1,24 +1,29 @@
 import './config/loadEnv.js';
 import { buildApp } from './app.js';
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const HOST = process.env.HOST || '0.0.0.0';
 
-// Async IIFE to handle async buildApp
-(async () => {
+async function startServer() {
   try {
-    const app = await buildApp(); // Await the Fastify instance
+    const app = await buildApp();
 
-    // Add types for err (Error | null) and address (string)
-    app.listen({ port: PORT, host: '0.0.0.0' }, (err: Error | null, address: string) => {
-      if (err) {
-        app.log.error(err);
-        process.exit(1);
-      }
-      // Log is available on the resolved app instance
-      app.log.info(`Server listening at ${address}`);
-    });
+    const shutdown = async (signal: string) => {
+      app.log.info(`Received signal ${signal}. Shutting down gracefully...`);
+      await app.close();
+      app.log.info('Server successfully closed.');
+      process.exit(0);
+    };
+
+    process.on('SIGINT', () => shutdown('SIGINT'));
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+    await app.listen({ port: PORT, host: HOST });
+
   } catch (err) {
-    console.error("Error starting server:", err); // Log error during buildApp
+    console.error('Error starting server:', err);
     process.exit(1);
   }
-})(); // Immediately invoke the async function
+}
+
+startServer();

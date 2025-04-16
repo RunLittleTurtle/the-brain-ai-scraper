@@ -2,14 +2,15 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "Node16",
-    "moduleResolution": "node16",
+    "moduleResolution": "Node16",
     "outDir": "dist",
-    // "rootDir": "src", // Removed rootDir to allow files outside src
+    "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
+    // Set to false to check library types more thoroughly
+    "skipLibCheck": false,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"], // Updated include for src and tests
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
