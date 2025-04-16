@@ -4,6 +4,15 @@ This document is the single source of truth for the LLM coding assistant. The LL
 
 # Features Checklist
 
+> **Status Rule:**
+> - If any sub-feature is `[LLM_In_Progress]`, the parent feature is `[LLM_In_Progress]`.
+> - If all sub-features have the same status, the parent feature takes that status.
+> - Otherwise, the parent feature takes the lowest (least advanced) status among its sub-features.
+> - This ensures the parent feature accurately reflects overall progress and never advances past the least advanced sub-feature.
+>
+> **Decomposition Rule:**
+> - Whenever the LLM advances a feature to `[LLM_In_Progress]`, it must immediately break down that feature into explicit sub-features, each with its own status, following the sub-feature style used in this checklist.
+
 - [ ] **Regression Suite:** All tests in `src/regression/regression.test.ts` must pass before moving any feature to “In Review” or “Done”.
 
 
@@ -24,20 +33,19 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 
 > **Note:** A feature is considered testable only when all its dependencies are implemented and tested. Features marked `[Blocked]` require completion of dependencies first.
 
-### Feature: MCP-Native Tool Orchestration - P0 [LLM_In_Progress]
-- **Status:** `[LLM_In_Progress]` (Not fully testable; see sub-features)
+### Feature: MCP-Native Tool Orchestration - P0 [LLM_Testing]
 - **Sub-Features:**
   - **1.1 Unified Orchestrator Interface** - [LLM_Testing]
     - Implements a single interface/class to dispatch tool calls based on orchestration mode.
   - **1.2 MCP Mode Implementation** - [LLM_Testing]
     - Implements MCP protocol client for dynamic tool discovery/invocation.
-    - [Blocked] by: 1.1
+
   - **1.3 Dual Mode & Fallback Logic** - [LLM_Testing]
     - Implements parallel execution, fallback, and logging.
-    - [Blocked] by: 1.1, 1.2
+, 1.2
   - **1.4 Orchestrator Regression Tests** - [LLM_Testing]
     - End-to-end and fallback tests for all modes.
-    - [Blocked] by: 1.1, 1.2, 1.3
+, 1.2, 1.3
 
 ### Feature: API Endpoint for Build Initiation (`POST /builds`) - P0 [Done]
 
@@ -50,26 +58,38 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
   - Returns `202 Accepted` response with `build_id` and initial status (e.g., `processing` or `analyzing`).
   - Handles auth failures and basic validation errors with appropriate HTTP status codes (400, 401/403).
 
-### Feature: LLM Analysis Service & Tool Selection (AnalysisService) - P0 [LLM_In_Progress]
-- **Status:** `[LLM_In_Progress]` (Partially testable; see sub-features)
+### Feature: LLM Analysis Service & Tool Selection (AnalysisService) - P0 [LLM_Test_Complete]
 - **Sub-Features:**
   - **2.1 AnalysisService Classic Mode** - [LLM_Test_Complete]
     - Classic mode logic and tests are complete.
-  - **2.2 AnalysisService MCP Mode** - [LLM_In_Progress]
-    - Integrate MCP mode with orchestrator.
-    - [Blocked] by: 1.2
-  - **2.3 AnalysisService Dual Mode** - [LLM_To_Do]
-    - Integrate dual mode (parallel, A/B, fallback).
-    - [Blocked] by: 1.3, 2.2
-  - **2.4 AnalysisService Error Handling & Fallback** - [LLM_To_Do]
-    - Robust error handling for all modes.
-    - [Blocked] by: 2.2, 2.3
-  - **2.5 AnalysisService Regression Tests** - [LLM_To_Do]
-    - End-to-end tests for all modes.
-    - [Blocked] by: 2.2, 2.3, 2.4
+  - **2.2 AnalysisService MCP Mode** - [LLM_Test_Complete]
+    - MCP mode integration with orchestrator, including stub and real MCP client logic.
+  - **2.3 AnalysisService Dual Mode** - [LLM_Test_Complete]
+    - Dual mode integration (parallel, A/B, fallback logic).
 
-### Feature: Modular Tool Integration & Execution Framework - P0 [Human_Review]
-- **Status:** `[Human_Review]`
+  - **2.4 AnalysisService Error Handling & Fallback** - [LLM_Test_Complete]
+    - Robust error handling for all modes, standardized error messages.
+
+  - **2.5 AnalysisService Regression Tests** - [LLM_Test_Complete]
+    - End-to-end and fallback tests for all modes.
+, 2.4
+
+### Feature: API Endpoint for Run Execution (`POST /runs`) - P0 [LLM_To_Do]
+- **Sub-Features:**
+  - **4.1 Route & Input Validation** - [LLM_To_Do]
+    - Define Fastify route, validate payload (`build_id`, `target_urls`).
+  - **4.2 Auth & Build State Checks** - [LLM_To_Do]
+    - Ensure build exists, is confirmed, and user is authorized.
+  - **4.3 Run Record Creation** - [LLM_To_Do]
+    - Generate and persist new run record, assign unique `run_id`.
+  - **4.4 Trigger Execution Engine** - [LLM_To_Do]
+    - Start async execution of configuration package against all target URLs.
+  - **4.5 Response & Error Handling** - [LLM_To_Do]
+    - Return `202 Accepted` with `run_id`, handle validation/auth errors.
+  - **4.6 Regression & Integration Tests** - [LLM_To_Do]
+    - Add/expand tests for all main flows and edge/error cases.
+
+### Feature: Modular Tool Integration & Execution Framework - P0 [LLM_Test_Complete]
 - **Sub-Features:**
   - **3.1 Define Standard Tool Interface** - [LLM_Test_Complete]
     - TypeScript interface for scraping tools (Playwright, Cheerio, etc.)
@@ -77,62 +97,59 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
     - Proxy manager, anti-captcha, user-agent rotator interfaces
   - **3.3 Implement Core Execution Engine** - [LLM_Test_Complete]
     - Loads and runs tools per configuration package
-    - [Blocked] by: 3.1, 3.2
+
   - **3.4 Parameterized Tool Invocation** - [LLM_Test_Complete]
     - Passes URLs, selectors, credentials, proxy settings
-    - [Blocked] by: 3.3
+
   - **3.5 Standardized Results Format** - [LLM_Test_Complete]
     - All tools return results/errors in a common format
-    - [Blocked] by: 3.1, 3.3
 
-### Feature: Initial Sample Generation (Internal Process) - P0 [Human_Review]
-- **Status:** `[Human_Review]`
+
+### Feature: Initial Sample Generation (Internal Process) - P0 [LLM_Test_Complete]
 - **Sub-Features:**
   - **4.1 Run Initial Tool Package** - [LLM_Test_Complete]
     - Use Modular Tool Framework for sample run
-    - [Blocked] by: 3.3
+
   - **4.2 Capture & Store Sample Results** - [LLM_Test_Complete]
     - Store structured JSON for each sample
-    - [Blocked] by: 4.1
+
   - **4.3 Update Build Status on Success** - [LLM_Test_Complete]
     - Set to `pending_user_feedback`
-    - [Blocked] by: 4.2
+
   - **4.4 Handle Failures & Errors** - [LLM_Test_Complete]
     - Update status to `failed` with error details
-    - [Blocked] by: 4.1
 
-### Feature: API Endpoint for Build Status & Samples (`GET /builds/{build_id}`) - P0 [LLM_To_Do]
-- **Status:** `[LLM_To_Do]`
+
+### Feature: API Endpoint for Build Status & Samples (`GET /builds/{build_id}`) - P0 [LLM_In_Progress]
 - **Sub-Features:**
   - **5.1 Endpoint Input Validation** - [LLM_In_Progress]
     - Validate build_id param, auth
   - **5.2 Return Build Status** - [LLM_To_Do]
     - Return status: processing, generating_samples, pending_user_feedback, etc.
-    - [Blocked] by: 5.1
+
   - **5.3 Return Sample Results** - [LLM_To_Do]
     - If pending_user_feedback, return package_results
-    - [Blocked] by: 5.2
+
   - **5.4 Error Handling** - [LLM_To_Do]
     - Handle 404, 401/403, consistent response
-    - [Blocked] by: 5.1
+
 
 ### Feature: API Endpoint for Build Refinement/Feedback (`POST /builds/{build_id}/configure`) - P1 [LLM_Backlog]
-- **Status:** `[LLM_Backlog]`
 - **Sub-Features:**
   - **6.1 Endpoint Input Validation** - [LLM_Backlog]
     - Validate build_id param, JSON payload, auth
   - **6.2 State Validation** - [LLM_Backlog]
     - Ensure build is in feedback-accepting state
-    - [Blocked] by: 6.1
+
   - **6.3 Trigger LLM Refinement Process** - [LLM_Backlog]
     - Pass feedback, hints, context to backend
-    - [Blocked] by: 6.2
+
   - **6.4 Update Build Status** - [LLM_Backlog]
     - Set to processing_feedback, etc.
-    - [Blocked] by: 6.3
+
   - **6.5 Error Handling** - [LLM_Backlog]
     - 404, 409, 401/403 handling
-    - [Blocked] by: 6.1
+
 
 ### Feature: LLM Package Refinement & Tool Switching (Internal Process) - P1 [LLM_Backlog]
 
@@ -199,17 +216,26 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 ### Feature: API Endpoint for Run Execution (`POST /runs`) - P0 [LLM_In_Progress]
 > **Note:** This is the next feature being implemented. Status advanced to [LLM_In_Progress] as of 2025-04-16.
 
-- Done Criteria:
-  - Endpoint accepts JSON payload: `build_id`, `target_urls` (array of strings).
-  - Performs Authentication/Authorization.
-  - Validates that the referenced `build_id` exists and is in `confirmed` state.
-  - Retrieves the stored `final_configuration` (in Universal Package Format) for the `build_id`.
-  - Validates `target_urls` format.
-  - Generates and stores a unique `run_id`.
-  - Successfully triggers the asynchronous full scraping process, passing the `run_id`, `target_urls`, and the `final_configuration` to the execution engine.
-  - Returns `202 Accepted` response with `run_id` and initial status (e.g., `pending`, `running`).
-  - Handles validation errors (invalid `build_id`, non-confirmed state, bad URLs) (400, 404).
-  - Handles auth failures (401/403).
+- **Sub-Features:**
+  - **1. Route & Input Validation** - [LLM_To_Do]
+    - Define Fastify route, accept JSON payload: `build_id`, `target_urls` (array of strings), validate payload shape and types.
+  - **2. Authentication & Authorization** - [LLM_To_Do]
+    - Verify user authentication and permissions for run execution.
+  - **3. Build Existence & State Validation** - [LLM_To_Do]
+    - Validate that referenced `build_id` exists and is in `confirmed` state.
+  - **4. Retrieve Final Configuration** - [LLM_To_Do]
+    - Fetch the stored `final_configuration` (Universal Package Format) for the build.
+  - **5. Target URLs Validation** - [LLM_To_Do]
+    - Validate all provided `target_urls` for correct format and accessibility.
+  - **6. Run Record Creation** - [LLM_To_Do]
+    - Generate and persist a unique `run_id` and run record in the database.
+  - **7. Trigger Scraping Execution** - [LLM_To_Do]
+    - Start asynchronous full scraping process, passing `run_id`, `target_urls`, and `final_configuration` to the execution engine.
+  - **8. Response Handling** - [LLM_To_Do]
+    - Return `202 Accepted` response with `run_id` and initial status (e.g., `pending`, `running`).
+  - **9. Error Handling** - [LLM_To_Do]
+    - Handle validation errors (invalid `build_id`, state, bad URLs) and auth failures (400, 401/403, 404).
+
 
 ### Feature: Full Scrape Execution Engine (Internal Process) - P0 [LLM_To_Do]
 
