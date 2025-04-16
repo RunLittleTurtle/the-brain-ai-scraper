@@ -1,0 +1,35 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: brain_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/brain_db?schema=public
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      API_KEY: ${API_KEY}
+    ports:
+      - "3000:3000"
+    command: ["npm", "run", "start"]
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+        - action: rebuild
+          path: package.json
+        - action: rebuild
+          path: package-lock.json
+volumes:
+  pgdata:

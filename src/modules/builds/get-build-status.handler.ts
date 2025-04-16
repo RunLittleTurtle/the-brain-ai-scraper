@@ -33,7 +33,11 @@ export async function getBuildStatusHandler(
     // Only include package_results if status is PENDING_USER_FEEDBACK and results exist
     if (build.status === BuildStatus.PENDING_USER_FEEDBACK && build.sampleResultsJson) {
       try {
-        response.package_results = JSON.parse(build.sampleResultsJson);
+        if (typeof build.sampleResultsJson === 'string') {
+          response.package_results = JSON.parse(build.sampleResultsJson);
+        } else {
+          response.package_results = build.sampleResultsJson;
+        }
       } catch (e) {
         response.package_results = null;
         response.error = 'Sample results data corrupted.';

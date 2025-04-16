@@ -5,12 +5,13 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "linux-arm64-openssl-1.1.x", "linux-arm64-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -34,12 +35,12 @@ model Build {
   status BuildStatus @default(PENDING_ANALYSIS) // Use the enum
   error  String? // Store error messages
 
-  initialPackageJson     String? // Renamed: Store the initial LLM-generated config package as JSON string
-  sampleResultsJson      String? // Store sample results as JSON string
-  finalConfigurationJson String? // Store the final config package as JSON string
+  initialPackageJson     Json? // Store the initial LLM-generated config package as JSON (jsonb in Postgres)
+  sampleResultsJson      Json? // Store sample results as JSON (jsonb in Postgres)
+  finalConfigurationJson Json? // Store the final config package as JSON (jsonb in Postgres)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Optional: Add relations later if needed (e.g., to Runs, User)
 }
+
+// Optional: Add relations later if needed (e.g., to Runs, User)

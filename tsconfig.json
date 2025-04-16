@@ -4,12 +4,12 @@
     "module": "Node16",
     "moduleResolution": "node16",
     "outDir": "dist",
-    "rootDir": "src",
+    // "rootDir": "src", // Removed rootDir to allow files outside src
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*.ts", "tests/**/*.ts"], // Updated include for src and tests
   "exclude": ["node_modules", "dist"]
 }

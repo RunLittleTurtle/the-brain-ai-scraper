@@ -10,6 +10,7 @@ This document provides a clear, human- and LLM-readable summary of all automated
 
 ## Table of Contents
 - [Regression Tests](#regression-tests)
+- [Integration Tests](#integration-tests)
 - [Feature Tests](#feature-tests)
   - [Build Processor](#build-processor)
   - [LLM Analysis & Tool Selection](#llm-analysis--tool-selection)
@@ -28,6 +29,7 @@ This document provides a clear, human- and LLM-readable summary of all automated
 - **Other Paths:**
   - Handles missing/malformed Prisma files (should fail gracefully).
   - Handles database connection errors.
+  - Handles invalid targetUrls: build status updates to FAILED.
 
 ### File: `src/regression/the-brain-app.regression.test.ts`
 - **Purpose:** Tests the full app flow, from build request to sample generation and cleanup.
@@ -37,6 +39,26 @@ This document provides a clear, human- and LLM-readable summary of all automated
   - LLM analysis fails (simulated API error): build status updates to FAILED.
   - Execution failure: error is logged, build status updates accordingly.
   - Invalid targetUrls: build status updates to FAILED.
+
+### File: `tests/container.integration.test.ts`
+- **Purpose:** Verify that the application's Docker image can be successfully built using Podman, ensuring the container environment setup (dependencies, Prisma generation, build steps) defined in the `Dockerfile` is correct.
+- **Happy Path:**
+  - The `podman build` command completes successfully using the project's `Dockerfile`.
+- **Other Paths:**
+  - The test fails if the `podman build` command exits with an error.
+  - *Note: Runtime database connectivity from within the container is not covered by this specific test.*
+
+---
+
+## Integration Tests
+
+### File: `tests/database.integration.test.ts`
+- **Purpose:** Verify direct connectivity from the test environment (host) to the PostgreSQL database container (`db` service) defined in `docker-compose.yml`. Ensures the database is running, accessible, and the Prisma client can establish a connection using the correct credentials.
+- **Prerequisites:** The PostgreSQL container (`db` service) must be running (e.g., via `docker-compose up -d db`) before executing this test.
+- **Happy Path:**
+  - Prisma client successfully connects (`$connect()`) to the database at `localhost:5432`.
+- **Other Paths:**
+  - The test fails if the Prisma client cannot connect (e.g., database container not running, incorrect credentials, network issue).
 
 ---
 
@@ -80,9 +102,10 @@ This document provides a clear, human- and LLM-readable summary of all automated
 ---
 
 ## How to Add New Tests
-- Place new feature/unit tests in the relevant module directory (e.g., `src/modules/feature/feature.test.ts`).
-- For end-to-end or regression tests, add to `src/regression/`.
-- Document each new test here with:
+- Place new feature/unit tests in a relevant subdirectory within the `tests` folder (e.g., `tests/modules/feature/feature.test.ts`).
+- For integration tests (like database or external service checks), place them in `tests/integration/` or directly in `tests/` if structure is simple.
+- For end-to-end or regression tests, add to `tests/regression/`.
+- Document each new test here under the appropriate section (Regression, Integration, Feature) with:
   - **Purpose**
   - **Happy Path**
   - **Other Paths** (edge cases, error handling)

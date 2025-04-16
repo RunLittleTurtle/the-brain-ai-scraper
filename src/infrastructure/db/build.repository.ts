@@ -1,5 +1,5 @@
 import { PrismaClient, Build, BuildStatus } from '../../generated/prisma/index.js';
-import { UniversalConfigurationPackageFormatV1 } from '../../core/domain/configuration-package.types';
+import { UniversalConfigurationPackageFormatV1 } from '../../core/domain/configuration-package.types.js';
 import { ExecutionResult } from '../execution/execution.service.js'; // Assuming this path
 
 // Interface for data required to create a build

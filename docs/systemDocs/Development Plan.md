@@ -380,3 +380,32 @@ This enhanced toolbox provides a much stronger foundation for tackling the chall
 *   **Error Handling & Resilience (Fastify):** Use Fastify's `setErrorHandler` for centralized API error responses. Implement robust error handling within tools, job processors, and services. Plan for retries.
 *   **Security:** Leverage Fastify security plugins (Helmet, CSRF if needed, Rate Limiting). Perform rigorous input validation (schemas help). Sanitize LLM inputs.
 *   **State Management:** Accurate state tracking across async jobs and API calls remains critical. Use DB transactions where necessary for atomicity.
+
+
+
+## Database: PostgreSQL (formerly SQLite)
+
+- The Brain App now uses **PostgreSQL** as its primary database for all environments.
+- Prisma ORM is configured for PostgreSQL (see `prisma/schema.prisma`).
+- JSON data is stored using Postgres `jsonb` columns for flexibility and performance.
+
+**Containerization & Orchestration**
+- Use Podman or Docker Compose to run both the app and PostgreSQL locally or in CI.
+- See `docker-compose.yml` for service definitions.
+
+**Prisma & Migrations**
+- Run migrations inside the app container:
+  ```sh
+  podman-compose exec app npx prisma migrate deploy
+  podman-compose exec app npx prisma generate
+  ```
+- See `.env` for the correct `DATABASE_URL` format.
+
+**Future: Vector Database Support**
+- PostgreSQL can be extended with the `pgvector` extension for AI/semantic search.
+- Plan to add vector columns and similarity search for knowledge base and LLM integration.
+
+**Removal of SQLite**
+- All SQLite files and references have been removed for full container compatibility.
+
+Refer to `Podman_Container_README.md` for detailed container setup instructions.

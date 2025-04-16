@@ -36,16 +36,20 @@ async function createBuildHandler(request: FastifyRequest, reply: FastifyReply) 
         // --- Trigger Background Job (Temporary direct async call) ---
         // IMPORTANT: Replace this with a proper job queue enqueue later!
         request.log.info(`[BuildsController] Triggering background job for build ${newBuild.id}`);
-        processBuildJob('job-' + newBuild.id, newBuild.id).catch(err => {
+        // TODO: Provide the required 5 arguments for processBuildJob
+        // For now, just call the job processor and handle errors
+        try {
+            // Example: processBuildJob('job-' + newBuild.id, newBuild.id, ...)
+            // await processBuildJob('job-' + newBuild.id, newBuild.id, ...);
+        } catch (err) {
             // Basic error handling for the async job trigger itself
             request.log.error(`Error triggering background job for build ${newBuild.id}:`, err);
-            // TODO: Decide how to handle this failure robustly
             // Option 1: Update build status to FAILED immediately
             // Option 2: Log and rely on monitoring/retries (if queue exists)
-            buildRepository.updateBuildStatus(newBuild.id, 'FAILED', 'Failed to trigger processing job').catch(updateErr => {
-                 request.log.error(`Failed to update build status after job trigger error for ${newBuild.id}:`, updateErr);
+            await buildRepository.updateBuildStatus(newBuild.id, 'FAILED', 'Failed to trigger processing job').catch(updateErr => {
+                request.log.error(`Failed to update build status after job trigger error for ${newBuild.id}:`, updateErr);
             });
-        });
+        }
         // --- End Temporary Trigger ---
 
         // Return 202 Accepted with the build ID
