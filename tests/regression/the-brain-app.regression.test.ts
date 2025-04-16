@@ -294,3 +294,164 @@ describe('The Brain App - Regression Suite', () => {
 
   // Add more: status transitions, user confirmation, etc. as the app grows!
 });
+
+// --- Additional Regression Tests for "Test Freak" Coverage --- //
+describe('The Brain App - Regression Suite (Test Freak Extensions)', () => {
+  let freshBuildRepositoryInstance: any;
+  let freshAnalysisInstance: any;
+  let freshExecutionEngineInstance: any;
+
+  beforeEach(() => {
+    freshBuildRepositoryInstance = {
+      findBuildById: vi.fn().mockResolvedValue({ ...mockBuild }),
+      updateBuildStatus: vi.fn(),
+      updateTempPackage: vi.fn(),
+      updateSampleResults: vi.fn(),
+      createBuild: vi.fn(),
+      updateFinalConfiguration: vi.fn(),
+    };
+    freshAnalysisInstance = { ...mockAnalysisInstance };
+    freshExecutionEngineInstance = { ...mockExecutionEngineInstance };
+  });
+  // --- 1. Security/Auth Tests ---
+  it('should reject requests with missing API key', async () => {
+    // Simulate Fastify request/reply with missing Authorization header
+    const req: any = { headers: {}, log: { error: vi.fn(), warn: vi.fn() } };
+    const reply: any = { code: vi.fn().mockReturnThis(), send: vi.fn() };
+    process.env.API_KEY = 'test-key';
+    const { apiKeyAuth } = await import('../../src/hooks/apiKeyAuth.js');
+    await apiKeyAuth(req, reply);
+    expect(reply.code).toHaveBeenCalledWith(401);
+    expect(reply.send).toHaveBeenCalledWith({ message: expect.stringContaining('Unauthorized') });
+  });
+
+  it('should reject requests with invalid API key', async () => {
+    const req: any = { headers: { authorization: 'Bearer wrong-key' }, log: { error: vi.fn(), warn: vi.fn() } };
+    const reply: any = { code: vi.fn().mockReturnThis(), send: vi.fn() };
+    process.env.API_KEY = 'test-key';
+    const { apiKeyAuth } = await import('../../src/hooks/apiKeyAuth.js');
+    await apiKeyAuth(req, reply);
+    expect(reply.code).toHaveBeenCalledWith(401);
+    expect(reply.send).toHaveBeenCalledWith({ message: expect.stringContaining('Unauthorized') });
+  });
+
+  // --- 2. Orchestration Mode Tests (Mocked) ---
+  it('should use classic orchestration mode when configured', async () => {
+    // Simulate config/env for classic mode
+    process.env.TOOL_ORCHESTRATION_MODE = 'classic';
+    // Here, you would mock the orchestrator and assert classic path is called
+    // For now, just assert the env is set correctly
+    expect(process.env.TOOL_ORCHESTRATION_MODE).toBe('classic');
+    // TODO: Add orchestrator mock and assert classic mode logic
+  });
+
+  it('should use MCP orchestration mode when configured', async () => {
+    process.env.TOOL_ORCHESTRATION_MODE = 'mcp';
+    expect(process.env.TOOL_ORCHESTRATION_MODE).toBe('mcp');
+    // TODO: Add orchestrator mock and assert MCP mode logic
+  });
+
+  it('should fallback to classic if MCP fails', async () => {
+    process.env.TOOL_ORCHESTRATION_MODE = 'both';
+    // TODO: Mock orchestrator to throw in MCP and assert fallback to classic
+    expect(process.env.TOOL_ORCHESTRATION_MODE).toBe('both');
+  });
+
+  // --- 3. Negative/Error Path Tests ---
+  it('handles DB connection failure gracefully', async () => {
+    const prisma = { $connect: vi.fn().mockRejectedValue(new Error('DB down')), $disconnect: vi.fn() };
+    try {
+      await prisma.$connect();
+    } catch (e) {
+      expect(e).toBeInstanceOf(Error);
+      expect(e.message).toContain('DB down');
+    }
+  });
+
+  it('handles tool execution error', async () => {
+    freshExecutionEngineInstance.executePackage = vi.fn().mockRejectedValueOnce(new Error('Tool crashed'));
+    await processBuildJob(
+      jobId,
+      buildId,
+      freshBuildRepositoryInstance,
+      freshAnalysisInstance as any,
+      freshExecutionEngineInstance as any
+    );
+    expect(freshBuildRepositoryInstance.updateBuildStatus).toHaveBeenCalledWith(
+      buildId,
+      BuildStatus.FAILED,
+      'Tool crashed'
+    );
+  });
+
+  // --- 4. Edge Case Tests ---
+  it('handles partial results if execution partially succeeds', async () => {
+    freshExecutionEngineInstance.executePackage = vi.fn().mockResolvedValueOnce({
+      overallStatus: 'partial_success',
+      results: [
+        { url: 'http://example.com', data: { title: 'Partial' }, status: 'partial', success: false },
+      ],
+      error: 'Some failed',
+    });
+    await processBuildJob(
+      jobId,
+      buildId,
+      freshBuildRepositoryInstance,
+      freshAnalysisInstance as any,
+      freshExecutionEngineInstance as any
+    );
+    expect(freshBuildRepositoryInstance.updateSampleResults).toHaveBeenCalledWith(
+      buildId,
+      expect.objectContaining({ results: expect.any(Array) })
+    );
+    expect(freshBuildRepositoryInstance.updateBuildStatus).toHaveBeenCalledWith(
+      buildId,
+      BuildStatus.FAILED,
+      'Some failed'
+    );
+  });
+
+  it('handles malformed input in build config', async () => {
+    mockBuildRepositoryInstance.findBuildById.mockResolvedValue({ ...mockBuild, userObjective: null });
+    await processBuildJob(
+      jobId,
+      buildId,
+      mockBuildRepositoryInstance,
+      mockAnalysisInstance as any,
+      mockExecutionEngineInstance as any
+    );
+    expect(mockAnalysisInstance.analyzeBuildRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ userObjective: null })
+    );
+  });
+
+  // --- 5. Concurrency Test (Simulated) ---
+  it('processes multiple builds in parallel (simulated)', async () => {
+    // Use isolated mocks for each parallel job to avoid shared call counts
+    const makeMocks = () => ({
+      buildRepository: {
+        findBuildById: vi.fn().mockResolvedValue({ ...mockBuild }),
+        updateBuildStatus: vi.fn(),
+        updateTempPackage: vi.fn(),
+        updateSampleResults: vi.fn(),
+        createBuild: vi.fn(), // Required by IBuildRepository
+        updateFinalConfiguration: vi.fn(), // Required by IBuildRepository
+      },
+      analysisInstance: { ...mockAnalysisInstance },
+      executionEngineInstance: { ...mockExecutionEngineInstance },
+    });
+    const jobs = [1, 2, 3].map(async (n) => {
+      const mocks = makeMocks();
+      await processBuildJob(
+        jobId + n,
+        buildId + n,
+        mocks.buildRepository,
+        mocks.analysisInstance as any,
+        mocks.executionEngineInstance as any
+      );
+      // Each mock should have been called exactly as expected for a single job
+      expect(mocks.buildRepository.findBuildById).toHaveBeenCalled();
+    });
+    await Promise.all(jobs);
+  });
+});

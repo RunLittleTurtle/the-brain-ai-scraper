@@ -8,6 +8,25 @@ This document is the single source of truth for the LLM coding assistant. The LL
 
 This document outlines the development plan for "The Brain" API project, specifically using the Fastify web framework. It details the file structure, phased development tasks, logging strategy, initial toolbox implementation, and key considerations. This plan serves as the primary guide for the *implementation* process, complementing the Features Checklist which defines *what* needs to be built and tracks progress. The target language is TypeScript, running in a Node.js environment with Fastify.
 
+---
+
+## 1.1 Testing Philosophy & Regression Suite Requirements
+
+**Testing is a first-class engineering value in The Brain project.**
+
+- All features, error paths, and business logic **must** have exhaustive regression and integration test coverage before any code is marked as `[LLM_Test_Complete]`, `[Human_Review]`, or `[Done]`.
+- The regression suite (`tests/regression/the-brain-app.regression.test.ts`) is the single source of truth for end-to-end and error path coverage. Every major flow, including error and edge cases, must be represented here.
+- Minimal/smoke tests or migration checks are not duplicated in the regression suite (see code comments for rationale).
+- Test coverage must include:
+    - Positive (happy path) and negative (failure) scenarios
+    - Edge cases (empty/malformed inputs, unexpected tool outputs, partial results, etc.)
+    - Security (auth, permissions, input validation)
+    - All tool orchestration modes (classic, MCP, both), including fallback logic
+    - Infrastructure and integration points (DB, containers, LLM providers, etc.)
+- **No feature or bugfix is considered complete until it is covered by regression/integration tests.**
+
+---
+
 
 
 ## 2. Detailed Development Plan (Phased)

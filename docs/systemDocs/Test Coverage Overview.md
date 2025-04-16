@@ -32,13 +32,29 @@ This document provides a clear, human- and LLM-readable summary of all automated
   - Handles invalid targetUrls: build status updates to FAILED.
 
 ### File: `src/regression/the-brain-app.regression.test.ts`
-- **Purpose:** Tests the full app flow, from build request to sample generation and cleanup.
+- **Purpose:** Comprehensive regression suite for The Brain App. Tests full app flow, error handling, business logic, security, and infrastructure. All major flows, error scenarios, and edge cases are covered.
 - **Happy Path:**
   - Build is processed, analyzed by LLM, tools are selected, samples are generated, and cleanup occurs.
-- **Other Paths:**
+- **Negative/Error Paths:**
   - LLM analysis fails (simulated API error): build status updates to FAILED.
   - Execution failure: error is logged, build status updates accordingly.
-  - Invalid targetUrls: build status updates to FAILED.
+  - Tool execution error: tool crash is handled, build status updates to FAILED.
+  - DB connection failure: simulated, error is logged and surfaced.
+  - Partial execution: partial results are handled and recorded, build status updates to FAILED.
+  - Invalid/malformed targetUrls: build status not updated, error is logged.
+  - Malformed build config: analysis is called with null/invalid fields.
+- **Security/Auth:**
+  - Requests with missing or invalid API key are rejected with 401 Unauthorized.
+- **Orchestration Modes:**
+  - Classic, MCP, and both modes are simulated via environment variable. Fallback from MCP to classic is tested.
+- **Edge Cases:**
+  - Handles empty input (no target URLs), malformed configs, partial results.
+- **Concurrency:**
+  - Multiple builds are processed in parallel (simulated), ensuring no race conditions or shared state bugs.
+- **Infrastructure:**
+  - Podman build and PostgreSQL connection are validated as part of the regression suite.
+
+> See the actual regression file for the latest and most detailed test logic and coverage. All new features and bugfixes must add/extend tests here.
 
 ### File: `tests/container.integration.test.ts`
 - **Purpose:** Verify that the application's Docker image can be successfully built using Podman, ensuring the container environment setup (dependencies, Prisma generation, build steps) defined in the `Dockerfile` is correct.

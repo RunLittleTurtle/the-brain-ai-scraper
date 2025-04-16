@@ -116,10 +116,22 @@ export async function processBuildJob(
       await buildRepository.updateBuildStatus(buildId, BuildStatus.FAILED, 'Internal error: Missing package for sample generation');
       return;
     }
-    const executionResult = await executionEngine.executePackage(generatedPackage, sampleUrls);
+    let executionResult: ExecutionResult | undefined;
+    try {
+      executionResult = await executionEngine.executePackage(generatedPackage, sampleUrls);
+    } catch (toolError: any) {
+      // If executePackage throws, update status to FAILED
+      await buildRepository.updateBuildStatus(
+        buildId,
+        BuildStatus.FAILED,
+        toolError?.message || 'Tool execution error'
+      );
+      // Optionally, store partial executionResult if available
+      return;
+    }
 
     // --- 3. Store Results & Update Status --- 
-    if (executionResult.overallStatus === 'failed') {
+    if (executionResult?.overallStatus === 'failed') {
       // If execution failed, update status to FAILED and skip storing sample results
       await buildRepository.updateBuildStatus(
         buildId,
@@ -128,9 +140,17 @@ export async function processBuildJob(
       );
       return;
     }
-    // Only store sample results if execution succeeded (includes 'completed' and 'partial_success')
-    await buildRepository.updateSampleResults(buildId, executionResult);
-    await buildRepository.updateBuildStatus(buildId, BuildStatus.PENDING_USER_FEEDBACK);
+    // Store sample results for completed or partial
+    if (executionResult) {
+      await buildRepository.updateSampleResults(buildId, executionResult);
+      // If partial_success, set status to FAILED but still store results
+      // Lint fix: partial_success is the valid status, not 'partial'
+      if (executionResult.overallStatus === 'partial_success') {
+        await buildRepository.updateBuildStatus(buildId, BuildStatus.FAILED, executionResult.error || 'Partial execution');
+      } else {
+        await buildRepository.updateBuildStatus(buildId, BuildStatus.PENDING_USER_FEEDBACK);
+      }
+    }
 
     // Fetch final status for logging (optional)
     const finalBuildState = await buildRepository.findBuildById(buildId);
