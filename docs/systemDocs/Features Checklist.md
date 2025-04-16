@@ -22,16 +22,22 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 
 ## 1. Core Build Lifecycle
 
+> **Note:** A feature is considered testable only when all its dependencies are implemented and tested. Features marked `[Blocked]` require completion of dependencies first.
+
 ### Feature: MCP-Native Tool Orchestration - P0 [LLM_In_Progress]
-- **Description:** Enable The Brain to support three internal tool orchestration modes: classic (direct function call), MCP (Model Context Protocol), and dual (parallel execution for A/B testing). Add a config flag or environment variable (`TOOL_ORCHESTRATION_MODE=classic|mcp|dual`) to select the orchestration mode. Implement a unified orchestrator interface that routes all tool calls through a single class, dispatching to classic, MCP, or dual modes as configured. In classic mode, use a static registry or service class for tool invocation (e.g., `classicToolRegistry['toolName'](params)`). In MCP mode, use an MCP client to discover and invoke tools dynamically. In dual mode, run both in parallel, log execution times, outputs, and errors, and record which mode performed best for each request. Implement automatic fallback: if the selected mode fails, the orchestrator should fall back to the other mode and log the event.
-- **Done Criteria:**
-  - Config flag/env var switches between classic, MCP, and dual modes.
-  - Unified orchestrator interface in place for all tool calls.
-  - Classic mode uses static registry/service class pattern.
-  - MCP mode discovers/invokes tools via MCP protocol.
-  - Dual mode runs both implementations in parallel, logs results and performance.
-  - Fallback logic is implemented and logged.
-  - Documentation is updated to reflect conventions and usage.
+- **Status:** `[LLM_In_Progress]` (Not fully testable; see sub-features)
+- **Sub-Features:**
+  - **1.1 Unified Orchestrator Interface** - [LLM_To_Do]
+    - Implements a single interface/class to dispatch tool calls based on orchestration mode.
+  - **1.2 MCP Mode Implementation** - [LLM_To_Do]
+    - Implements MCP protocol client for dynamic tool discovery/invocation.
+    - [Blocked] by: 1.1
+  - **1.3 Dual Mode & Fallback Logic** - [LLM_To_Do]
+    - Implements parallel execution, fallback, and logging.
+    - [Blocked] by: 1.1, 1.2
+  - **1.4 Orchestrator Regression Tests** - [LLM_To_Do]
+    - End-to-end and fallback tests for all modes.
+    - [Blocked] by: 1.1, 1.2, 1.3
 
 ### Feature: API Endpoint for Build Initiation (`POST /builds`) - P0 [Done]
 
@@ -45,60 +51,88 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
   - Handles auth failures and basic validation errors with appropriate HTTP status codes (400, 401/403).
 
 ### Feature: LLM Analysis Service & Tool Selection (AnalysisService) - P0 [LLM_In_Progress]
+- **Status:** `[LLM_In_Progress]` (Partially testable; see sub-features)
+- **Sub-Features:**
+  - **2.1 AnalysisService Classic Mode** - [LLM_Test_Complete]
+    - Classic mode logic and tests are complete.
+  - **2.2 AnalysisService MCP Mode** - [LLM_To_Do]
+    - Integrate MCP mode with orchestrator.
+    - [Blocked] by: 1.2
+  - **2.3 AnalysisService Dual Mode** - [LLM_To_Do]
+    - Integrate dual mode (parallel, A/B, fallback).
+    - [Blocked] by: 1.3, 2.2
+  - **2.4 AnalysisService Error Handling & Fallback** - [LLM_To_Do]
+    - Robust error handling for all modes.
+    - [Blocked] by: 2.2, 2.3
+  - **2.5 AnalysisService Regression Tests** - [LLM_To_Do]
+    - End-to-end tests for all modes.
+    - [Blocked] by: 2.2, 2.3, 2.4
 
-- **Description:** Implement an `AnalysisService` responsible for interacting with the LLM (OpenAI or other) to analyze build requests, select tools, and generate the Universal Configuration Package Format V1 (UCPF). Should integrate with the orchestrator and support all orchestration modes (`classic`, `mcp`, `both`).
-- **LLM Provider & API Key Management:** All developers can set or update API keys for any supported LLM provider (OpenAI, Anthropic, Grok, Gemini, Llama, Mistral, OpenRouter, etc.) via terminal/CLI, REST API, or MCP, without code changes. The system is built for pluggable LLM services, multi-provider support, and flexible credential management.
-- **Done Criteria:**
-  - AnalysisService receives build request data (`build_id`, URLs, objective).
-  - Calls LLM (via `openaiService`) to analyze objective and URLs.
-  - LLM determines required data fields and selects tools from MCP-compliant toolbox.
-  - Generates the initial UCPF for tool orchestration.
-  - Integrates with orchestrator supporting all modes (`TOOL_ORCHESTRATION_MODE=classic|mcp|both`).
-  - Handles errors robustly and updates build status appropriately.
-  - Documentation and checklist updated to reflect AnalysisService as the core entry point for tool selection.
 ### Feature: Modular Tool Integration & Execution Framework - P0 [Human_Review]
-
-- Done Criteria:
-  - Define a standard internal interface or contract (e.g., TypeScript interface) for different scraping tools (e.g., Playwright script class, Cheerio/DOM parser function, specific API client).
-  - Define standard interfaces for auxiliary tools (e.g., proxy managers, anti-captcha services, user-agent rotators).
-  - Implement a core execution engine capable of loading and running the selected tools based on a standardized configuration package format.
-  - Ensure tools can be invoked with specific parameters (URLs, selectors, credentials, proxy settings) defined in the configuration package.
-  - Ensure tools return results (or errors) in a standardized format (e.g., defined TypeScript types) that the core engine can capture.
+- **Status:** `[Human_Review]`
+- **Sub-Features:**
+  - **3.1 Define Standard Tool Interface** - [LLM_Test_Complete]
+    - TypeScript interface for scraping tools (Playwright, Cheerio, etc.)
+  - **3.2 Define Auxiliary Tool Interfaces** - [LLM_Test_Complete]
+    - Proxy manager, anti-captcha, user-agent rotator interfaces
+  - **3.3 Implement Core Execution Engine** - [LLM_Test_Complete]
+    - Loads and runs tools per configuration package
+    - [Blocked] by: 3.1, 3.2
+  - **3.4 Parameterized Tool Invocation** - [LLM_Test_Complete]
+    - Passes URLs, selectors, credentials, proxy settings
+    - [Blocked] by: 3.3
+  - **3.5 Standardized Results Format** - [LLM_Test_Complete]
+    - All tools return results/errors in a common format
+    - [Blocked] by: 3.1, 3.3
 
 ### Feature: Initial Sample Generation (Internal Process) - P0 [Human_Review]
-
-- Done Criteria:
-  - Backend process uses the "Modular Tool Integration & Execution Framework" to run the initially selected tool package (from "LLM Analysis & Initial Tool Selection").
-  - Executes the package against a small subset of the provided `target_urls`.
-  - Captures the structured JSON output (or errors) for each sample URL processed.
-  - Stores these sample results (`package_results`) associated with the `build_id`.
-  - Updates the build status to `pending_user_feedback` upon successful sample generation.
-  - Handles failures during sample generation (e.g., tool errors, sites blocking) by updating build status to `failed` with specific error details.
+- **Status:** `[Human_Review]`
+- **Sub-Features:**
+  - **4.1 Run Initial Tool Package** - [LLM_Test_Complete]
+    - Use Modular Tool Framework for sample run
+    - [Blocked] by: 3.3
+  - **4.2 Capture & Store Sample Results** - [LLM_Test_Complete]
+    - Store structured JSON for each sample
+    - [Blocked] by: 4.1
+  - **4.3 Update Build Status on Success** - [LLM_Test_Complete]
+    - Set to `pending_user_feedback`
+    - [Blocked] by: 4.2
+  - **4.4 Handle Failures & Errors** - [LLM_Test_Complete]
+    - Update status to `failed` with error details
+    - [Blocked] by: 4.1
 
 ### Feature: API Endpoint for Build Status & Samples (`GET /builds/{build_id}`) - P0 [LLM_To_Do]
-
-- Done Criteria:
-  - Endpoint accepts `build_id` via path parameter.
-  - Performs Authentication/Authorization.
-  - Returns current build status (e.g., `processing`, `generating_samples`, `pending_user_feedback`, `failed`, `confirmed`).
-  - If status is `pending_user_feedback`, response includes the stored `package_results` array containing valid JSON sample data generated by the initial package.
-  - Handles `build_id` not found (404).
-  - Handles auth failures (401/403).
-  - Response structure is consistent.
+- **Status:** `[LLM_To_Do]`
+- **Sub-Features:**
+  - **5.1 Endpoint Input Validation** - [LLM_In_Progress]
+    - Validate build_id param, auth
+  - **5.2 Return Build Status** - [LLM_To_Do]
+    - Return status: processing, generating_samples, pending_user_feedback, etc.
+    - [Blocked] by: 5.1
+  - **5.3 Return Sample Results** - [LLM_To_Do]
+    - If pending_user_feedback, return package_results
+    - [Blocked] by: 5.2
+  - **5.4 Error Handling** - [LLM_To_Do]
+    - Handle 404, 401/403, consistent response
+    - [Blocked] by: 5.1
 
 ### Feature: API Endpoint for Build Refinement/Feedback (`POST /builds/{build_id}/configure`) - P1 [LLM_Backlog]
-
-- Done Criteria:
-  - Endpoint accepts `build_id` via path parameter.
-  - Accepts JSON payload with `user_feedback` (string) and optional `tool_hints`.
-  - Performs Authentication/Authorization.
-  - Validates that the build is in a state accepting feedback (e.g., `pending_user_feedback`).
-  - Successfully triggers the asynchronous backend LLM refinement process, passing the `build_id`, original objective/URLs, previous tool package, sample results, and new user feedback.
-  - Updates the build status (e.g., `processing_feedback`).
-  - Returns `202 Accepted` response.
-  - Handles `build_id` not found (404).
-  - Handles invalid state errors (e.g., trying to configure a confirmed build) (409 Conflict or 400).
-  - Handles auth failures (401/403).
+- **Status:** `[LLM_Backlog]`
+- **Sub-Features:**
+  - **6.1 Endpoint Input Validation** - [LLM_Backlog]
+    - Validate build_id param, JSON payload, auth
+  - **6.2 State Validation** - [LLM_Backlog]
+    - Ensure build is in feedback-accepting state
+    - [Blocked] by: 6.1
+  - **6.3 Trigger LLM Refinement Process** - [LLM_Backlog]
+    - Pass feedback, hints, context to backend
+    - [Blocked] by: 6.2
+  - **6.4 Update Build Status** - [LLM_Backlog]
+    - Set to processing_feedback, etc.
+    - [Blocked] by: 6.3
+  - **6.5 Error Handling** - [LLM_Backlog]
+    - 404, 409, 401/403 handling
+    - [Blocked] by: 6.1
 
 ### Feature: LLM Package Refinement & Tool Switching (Internal Process) - P1 [LLM_Backlog]
 

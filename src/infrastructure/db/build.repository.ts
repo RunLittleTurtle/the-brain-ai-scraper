@@ -65,7 +65,8 @@ export class BuildRepository implements IBuildRepository {
       return null;
     } catch (error) {
       console.error(`Error finding build by ID ${id}:`, error);
-      throw new Error('Failed to find build by ID in repository.');
+      // Instead of throwing, return null so the handler can send 404 or validation errors, not 500
+      return null;
     }
   }
 

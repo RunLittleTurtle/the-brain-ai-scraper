@@ -1,8 +1,9 @@
 import { Static, Type } from '@sinclair/typebox';
 import { BuildStatus } from '../../generated/prisma/index.js';
+import type { RouteGenericInterface } from '../../types/fastify.js';
 
 export const GetBuildStatusParamsSchema = Type.Object({
-  build_id: Type.String({ description: 'The unique ID assigned to the build.' })
+  build_id: Type.String({ description: 'The unique ID assigned to the build.', format: 'uuid' })
 });
 
 export const GetBuildStatusResponseSchema = Type.Object({
@@ -28,4 +29,9 @@ export const getBuildStatusSchema = {
   }
 };
 
-export type GetBuildStatusParams = Static<typeof GetBuildStatusParamsSchema>;
+type ParamsType = Static<typeof GetBuildStatusParamsSchema>;
+
+export interface GetBuildStatusParams extends RouteGenericInterface {
+  Params: ParamsType;
+  // Add Querystring, Body, Headers if needed for this route
+}

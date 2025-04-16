@@ -26,6 +26,7 @@ This document is the single source of truth for the LLM coding assistant. The LL
 
 ## 4. Workflow & Status Management:
 
+- **Task Limit Rule:** You may not have more than **5 tasks** with status `[LLM_In_Progress]` or `[LLM_Testing]` at the same time. If you reach this limit, do not open new tasks—focus on advancing existing tasks to `[Human_Review]` before starting more.
 - **Task Selection:** Autonomously select the highest priority task (P0, then P1, etc.) from `[Backlog]` or `[To Do]` on the Feature Checklist.
 - Status Updates (Your Responsibility):
   - `[Backlog]` -> `[To Do]` (When you decide to tackle it next)
