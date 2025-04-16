@@ -1,5 +1,5 @@
-import { IAntiBlockingTool } from '../execution/tool.interface';
-import { ToolConfiguration } from '../../core/domain/configuration-package.types';
+import { IAntiBlockingTool } from '../execution/tool.interface.js';
+import { ToolConfiguration } from '../../core/domain/configuration-package.types.js';
 
 /**
  * Example MCP-compliant Anti-Blocking Tool

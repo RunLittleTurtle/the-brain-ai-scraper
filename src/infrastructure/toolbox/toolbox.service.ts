@@ -1,9 +1,9 @@
-import { ITool } from '../execution/tool.interface';
-import { IToolbox } from '../../core/interfaces/toolbox.interface';
-import { FetchCheerioScraper } from './fetch-cheerio.scraper';
-import { PlaywrightScraper } from './playwright.scraper';
-import { ProxyManagerTool } from './proxy-manager.tool';
-import { AntiBlockingTool } from './anti-blocking.tool';
+import { ITool } from '../execution/tool.interface.js';
+import { IToolbox } from '../../core/interfaces/toolbox.interface.js';
+import { FetchCheerioScraper } from './fetch-cheerio.scraper.js';
+import { PlaywrightScraper } from './playwright.scraper.js';
+import { ProxyManagerTool } from './proxy-manager.tool.js';
+import { AntiBlockingTool } from './anti-blocking.tool.js';
 
 // MCP tool definition type
 export interface McpToolDefinition {

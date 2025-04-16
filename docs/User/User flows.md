@@ -1,3 +1,7 @@
+<!--
+These files are intended to provide human context and business/user perspective. The LLM should use these to better understand the project from the human/user point of view, but should not treat them as the technical source of truth.
+-->
+
 # User Flows
 
 ## 1. User flow - Initial Build & Immediate Confirmation

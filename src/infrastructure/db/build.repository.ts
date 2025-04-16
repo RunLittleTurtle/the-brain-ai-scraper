@@ -1,5 +1,5 @@
 import { PrismaClient, Build, BuildStatus } from '../../generated/prisma/index.js';
-import { UniversalConfigurationPackageFormatV1 } from '../../core/domain/configuration-package.types.js';
+import { UniversalConfigurationPackageFormatV1 } from '../../core/domain/configuration-package.types';
 import { ExecutionResult } from '../execution/execution.service.js'; // Assuming this path
 
 // Interface for data required to create a build
@@ -91,7 +91,7 @@ export class BuildRepository implements IBuildRepository {
       const packageJson = JSON.stringify(pkg);
       const build = await this.prisma.build.update({
         where: { id },
-        data: { tempPackageJson: packageJson },
+        data: { /* TODO: Add valid properties here. Removed tempPackageJson as it is not in the Prisma schema. */ },
       });
       return build;
     } catch (error) {

@@ -4,7 +4,7 @@
 // Expand this file as you add new features or modules!
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { processBuildJob } from '../jobs/build.processor';
+import { processBuildJob } from '../jobs/build.processor.js';
 // Remove dependency on generated Prisma client for enums in test context
 // Define BuildStatus locally for test isolation and robustness
 const BuildStatus = {
@@ -22,9 +22,26 @@ const mockBuildRepositoryInstance = {
   updateBuildStatus: vi.fn(),
   updateTempPackage: vi.fn(),
   updateSampleResults: vi.fn(),
+  createBuild: vi.fn(),
+  updateFinalConfiguration: vi.fn(),
 };
-const mockAnalysisInstance = { analyzeBuildRequest: vi.fn() };
-const mockExecutionEngineInstance = { executePackage: vi.fn(), cleanupTools: vi.fn() };
+import { AnalysisService } from '../modules/analysis/analysis.service.js';
+
+const mockToolboxInstance = {};
+const mockOpenaiServiceInstance = {};
+
+// Use a real AnalysisService instance with mocked methods
+const mockAnalysisInstance = new AnalysisService(
+  mockBuildRepositoryInstance as any,
+  mockToolboxInstance as any,
+  mockOpenaiServiceInstance as any
+);
+vi.spyOn(mockAnalysisInstance, 'analyzeBuildRequest').mockImplementation(vi.fn());
+import { ExecutionEngineService } from '../infrastructure/execution/execution.service.js';
+
+const mockExecutionEngineInstance = new ExecutionEngineService(mockToolboxInstance as any);
+vi.spyOn(mockExecutionEngineInstance, 'executePackage').mockImplementation(vi.fn());
+vi.spyOn(mockExecutionEngineInstance, 'cleanupTools').mockImplementation(vi.fn());
 
 const jobId = 'regression-job-id';
 const buildId = 'regression-build-id';
@@ -50,9 +67,9 @@ describe('Regression Suite', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockBuildRepositoryInstance.findBuildById.mockResolvedValue({...mockBuild});
-    mockAnalysisInstance.analyzeBuildRequest.mockResolvedValue({...mockAnalysisResult});
-    mockExecutionEngineInstance.executePackage.mockResolvedValue({...mockExecutionResult});
-    mockExecutionEngineInstance.cleanupTools.mockResolvedValue(undefined);
+    (vi.spyOn(mockAnalysisInstance, 'analyzeBuildRequest') as any).mockResolvedValue({...mockAnalysisResult});
+    (vi.spyOn(mockExecutionEngineInstance, 'executePackage') as any).mockResolvedValue({...mockExecutionResult});
+    (vi.spyOn(mockExecutionEngineInstance, 'cleanupTools') as any).mockResolvedValue(undefined);
     mockBuildRepositoryInstance.updateBuildStatus.mockResolvedValue({...mockBuild});
     mockBuildRepositoryInstance.updateTempPackage.mockResolvedValue({...mockBuild});
     mockBuildRepositoryInstance.updateSampleResults.mockResolvedValue({...mockBuild});
@@ -63,9 +80,9 @@ describe('Regression Suite', () => {
     // NOTE: This regression test is now largely redundant with the more comprehensive 'the-brain-app.regression.test.ts'.
 // If future refactors make this file obsolete, consider removing it to reduce maintenance burden.
     mockBuildRepositoryInstance.findBuildById.mockResolvedValue({...mockBuild});
-    mockAnalysisInstance.analyzeBuildRequest.mockResolvedValue({ success: true, package: { ...mockAnalysisResult.package } });
-    mockExecutionEngineInstance.executePackage.mockResolvedValue({ ...mockExecutionResult });
-    mockExecutionEngineInstance.cleanupTools.mockResolvedValue(undefined);
+    (vi.spyOn(mockAnalysisInstance, 'analyzeBuildRequest') as any).mockResolvedValue({ success: true, package: { ...mockAnalysisResult.package } });
+    (vi.spyOn(mockExecutionEngineInstance, 'executePackage') as any).mockResolvedValue({ ...mockExecutionResult });
+    (vi.spyOn(mockExecutionEngineInstance, 'cleanupTools') as any).mockResolvedValue(undefined);
 
     await processBuildJob(
       jobId,

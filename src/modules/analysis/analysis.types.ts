@@ -1,4 +1,4 @@
-import { UniversalConfigurationPackageFormatV1 } from "../../core/domain/configuration-package.types.js"; // Corrected path
+import { UniversalConfigurationPackageFormatV1 } from "../../core/domain/configuration-package.types";
 
 // Input for the analysis service
 export interface AnalysisInput {

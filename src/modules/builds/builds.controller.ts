@@ -65,6 +65,9 @@ async function createBuildHandler(request: FastifyRequest, reply: FastifyReply) 
 /**
  * Defines routes for the /builds endpoint
  */
+import { getBuildStatusHandler } from './get-build-status.handler.js';
+import { getBuildStatusSchema, GetBuildStatusParams } from './get-build-status.schema.js';
+
 export default async function (fastify: FastifyInstance) {
 
     // Create a new build request
@@ -75,6 +78,12 @@ export default async function (fastify: FastifyInstance) {
         },
         createBuildHandler
     );
+
+    // Get build status and samples
+    fastify.get<{ Params: GetBuildStatusParams }>('/:build_id', {
+        schema: getBuildStatusSchema,
+        preHandler: [apiKeyAuth],
+    }, getBuildStatusHandler);
 
     // Handle unsupported methods on /builds route
     fastify.route({

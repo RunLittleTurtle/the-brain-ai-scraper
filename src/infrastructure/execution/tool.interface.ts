@@ -1,4 +1,4 @@
-import { ToolConfiguration, UniversalConfigurationPackageFormatV1 } from '../../core/domain/configuration-package.types';
+import { ToolConfiguration, UniversalConfigurationPackageFormatV1 } from '../../core/domain/configuration-package.types.js';
 
 /**
  * Represents the result of executing a tool, particularly a scraper.

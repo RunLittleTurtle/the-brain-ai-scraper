@@ -1,9 +1,9 @@
 import OpenAI from 'openai';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UniversalConfigurationPackageFormatV1, ScraperToolConfiguration, ToolId } from '../../core/domain/configuration-package.types';
-import { ToolboxService } from '../toolbox/toolbox.service';
-import { ITool } from '../execution/tool.interface';
+import { UniversalConfigurationPackageFormatV1, ScraperToolConfiguration } from '../../core/domain/configuration-package.types.js';
+import { ToolboxService } from '../toolbox/toolbox.service.js';
+import { ITool } from '../execution/tool.interface.js';
 
 @Injectable()
 export class OpenaiService {
@@ -24,12 +24,12 @@ export class OpenaiService {
 
   /**
    * Generates an initial scraper configuration package using OpenAI.
-   * @param objective The user's objective for scraping.
+   * @param description The user's description for scraping.
    * @param sampleUrls A few sample URLs to analyze.
    * @returns A Promise resolving to the generated configuration package or null if generation fails.
    */
   async generateInitialPackage(
-    objective: string,
+    description: string,
     sampleUrls: string[],
   ): Promise<UniversalConfigurationPackageFormatV1 | null> {
     if (!this.openai) {
@@ -43,25 +43,25 @@ export class OpenaiService {
 
     // Basic prompt engineering - needs significant refinement for production
     const prompt = `
-Objective: ${objective}
+Objective: ${description}
 Sample URLs: ${sampleUrls.join(', ')}
 
 Available Scraper Tools:
 ${scraperDescriptions}
 
-Based on the objective and sample URLs, determine the best scraper tool ID from the list above and generate a JSON configuration package in the following format. ONLY return the JSON object, nothing else.
+Based on the description and sample URLs, determine the best scraper tool ID from the list above and generate a JSON configuration package in the following format. ONLY return the JSON object, nothing else.
 
 Example Format:
 {
-  "version": "1.0",
-  "objective": "Extract job titles and company names",
-  "targetUrls": [], // Keep this empty, it will be populated later
+  "schemaVersion": "1.0",
+  "description": "Extract job titles and company names",
+  
   "scraper": {
     "toolId": "scraper:playwright_stealth_v1", // Choose the best tool ID from the list
     "selectors": {
       "field1": "css_selector_for_field1",
       "field2": "css_selector_for_field2"
-      // ... add more fields based on objective
+      // ... add more fields based on description
     }
     // Add other tool-specific configurations if needed (e.g., waitTimes, interactionSteps)
   },
@@ -69,7 +69,7 @@ Example Format:
   "delivery": {}
 }
 
-Determine the necessary data fields from the objective and create appropriate CSS selectors (be specific and robust if possible, guess if unsure).
+Determine the necessary data fields from the description and create appropriate CSS selectors (be specific and robust if possible, guess if unsure).
 
 Your Response (JSON only):
 `;
@@ -98,22 +98,21 @@ Your Response (JSON only):
       const generatedPackage = JSON.parse(jsonString) as UniversalConfigurationPackageFormatV1;
 
       // Basic validation (can be expanded significantly)
-      if (!generatedPackage.version || !generatedPackage.scraper?.toolId || !generatedPackage.scraper?.selectors) {
+      if (!generatedPackage.schemaVersion || !generatedPackage.scraper?.tool_id || !generatedPackage.scraper?.parameters.selectors) {
         throw new Error('Generated package is missing required fields.');
       }
       // Ensure the selected tool is one we listed
-      if (!availableScrapers.some((s: ITool) => s.toolId === generatedPackage.scraper.toolId)) {
-         this.logger.warn(`LLM selected a tool not in the provided list: ${generatedPackage.scraper.toolId}. Attempting to proceed.`);
+      if (!availableScrapers.some((s: ITool) => s.toolId === generatedPackage.scraper.tool_id)) {
+         this.logger.warn(`LLM selected a tool not in the provided list: ${generatedPackage.scraper.tool_id}. Attempting to proceed.`);
          // Decide how to handle - maybe default to a known good tool or fail?
          // For now, we log a warning and let it pass.
       }
 
-      this.logger.log(`Successfully generated initial package using tool: ${generatedPackage.scraper.toolId}`);
+      this.logger.log(`Successfully generated initial package using tool: ${generatedPackage.scraper.tool_id}`);
 
-       // Fill in objective and potentially sample URLs if needed for context, leave targetUrls empty
-      generatedPackage.objective = objective;
-      // generatedPackage.targetUrls = sampleUrls; // Decide if sample URLs should be part of the final initial package
-      generatedPackage.targetUrls = [];
+       // Fill in description and potentially sample URLs if needed for context, leave /* targetUrls property does not exist on UniversalConfigurationPackageFormatV1 */ empty
+      generatedPackage.description = description;
+      
 
       return generatedPackage;
 

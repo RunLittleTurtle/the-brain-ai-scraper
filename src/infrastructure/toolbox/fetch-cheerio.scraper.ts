@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { IScraperTool, ToolExecutionResult } from '../execution/tool.interface.js'; 
+import { IScraperTool, ToolExecutionResult } from '../execution/tool.interface.js';
 import { UniversalConfigurationPackageFormatV1, ToolConfiguration } from '../../core/domain/configuration-package.types.js';
 
 interface FetchCheerioParams {

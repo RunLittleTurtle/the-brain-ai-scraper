@@ -1,5 +1,5 @@
-import { IProxyManagerTool } from '../execution/tool.interface';
-import { ToolConfiguration } from '../../core/domain/configuration-package.types';
+import { IProxyManagerTool } from '../execution/tool.interface.js';
+import { ToolConfiguration } from '../../core/domain/configuration-package.types.js';
 
 /**
  * Example MCP-compliant Proxy Manager Tool
