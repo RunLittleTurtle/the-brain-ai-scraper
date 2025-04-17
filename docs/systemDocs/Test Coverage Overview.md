@@ -1,133 +1,39 @@
-<!--
-This document is the single source of truth for the LLM coding assistant. The LLM should reference, update, and maintain this doc as the project evolves. All architectural, design, and implementation decisions should be reflected here.
--->
-
-# Test Coverage Overview
-
-This document provides a clear, human- and LLM-readable summary of all automated tests in the codebase. It explains what each test covers, the happy path, edge/error paths, and the rationale for each feature and regression test.
-
----
-
-## Table of Contents
-- [Regression Tests](#regression-tests)
-- [Integration Tests](#integration-tests)
-- [Feature Tests](#feature-tests)
-  - [Build Processor](#build-processor)
-  - [LLM Analysis & Tool Selection](#llm-analysis--tool-selection)
-  - [Sample Generation](#sample-generation)
-  - [Toolbox & MCP Compliance](#toolbox--mcp-compliance)
-- [How to Add New Tests](#how-to-add-new-tests)
-
----
-
-## Regression Tests
-
-### File: `src/regression/regression.test.ts`
-- **Purpose:** Ensures no breaking changes across the application. Covers integration between modules, database, and tool orchestration.
-- **Happy Path:**
-  - End-to-end build process completes successfully with valid inputs.
-- **Other Paths:**
-  - Handles missing/malformed Prisma files (should fail gracefully).
-  - Handles database connection errors.
-  - Handles invalid targetUrls: build status updates to FAILED.
-
-### File: `src/regression/the-brain-app.regression.test.ts`
-- **Purpose:** Comprehensive regression suite for The Brain App. Tests full app flow, error handling, business logic, security, and infrastructure. All major flows, error scenarios, and edge cases are covered.
-- **Happy Path:**
-  - Build is processed, analyzed by LLM, tools are selected, samples are generated, and cleanup occurs.
-- **Negative/Error Paths:**
-  - LLM analysis fails (simulated API error): build status updates to FAILED.
-  - Execution failure: error is logged, build status updates accordingly.
-  - Tool execution error: tool crash is handled, build status updates to FAILED.
-  - DB connection failure: simulated, error is logged and surfaced.
-  - Partial execution: partial results are handled and recorded, build status updates to FAILED.
-  - Invalid/malformed targetUrls: build status not updated, error is logged.
-  - Malformed build config: analysis is called with null/invalid fields.
-- **Security/Auth:**
-  - Requests with missing or invalid API key are rejected with 401 Unauthorized.
-- **Orchestration Modes:**
-  - Classic, MCP, and both modes are simulated via environment variable. Fallback from MCP to classic is tested.
-- **Edge Cases:**
-  - Handles empty input (no target URLs), malformed configs, partial results.
-- **Concurrency:**
-  - Multiple builds are processed in parallel (simulated), ensuring no race conditions or shared state bugs.
-- **Infrastructure:**
-  - Podman build and PostgreSQL connection are validated as part of the regression suite.
-
-> See the actual regression file for the latest and most detailed test logic and coverage. All new features and bugfixes must add/extend tests here.
-
-### File: `tests/container.integration.test.ts`
-- **Purpose:** Verify that the application's Docker image can be successfully built using Podman, ensuring the container environment setup (dependencies, Prisma generation, build steps) defined in the `Dockerfile` is correct.
-- **Happy Path:**
-  - The `podman build` command completes successfully using the project's `Dockerfile`.
-- **Other Paths:**
-  - The test fails if the `podman build` command exits with an error.
-  - *Note: Runtime database connectivity from within the container is not covered by this specific test.*
-
----
-
-## Integration Tests
-
-### File: `tests/database.integration.test.ts`
-- **Purpose:** Verify direct connectivity from the test environment (host) to the PostgreSQL database container (`db` service) defined in `docker-compose.yml`. Ensures the database is running, accessible, and the Prisma client can establish a connection using the correct credentials.
-- **Prerequisites:** The PostgreSQL container (`db` service) must be running (e.g., via `docker-compose up -d db`) before executing this test.
-- **Happy Path:**
-  - Prisma client successfully connects (`$connect()`) to the database at `localhost:5432`.
-- **Other Paths:**
-  - The test fails if the Prisma client cannot connect (e.g., database container not running, incorrect credentials, network issue).
-
----
-
-## Feature Tests
-
-### File: `src/jobs/build.processor.test.ts`
-#### Suite: `processBuildJob`
-- **Purpose:** Unit and integration tests for the build processing logic.
-
-- **Happy Path:**
-  - Build in `PENDING_ANALYSIS` state is processed, LLM analyzes, tools are selected, and status is updated.
-
-- **Other Paths:**
-  - Build not in `PENDING_ANALYSIS`: logs warning, skips job.
-  - No target URLs: status set to FAILED.
-  - LLM analysis fails: status set to FAILED, error logged.
-  - Processing error (e.g., DB error): status set to FAILED, error logged.
-
-#### Suite: `LLM Analysis & Tool Selection`
-- **Purpose:** Ensures LLM receives correct toolbox, selects tools, and outputs a valid configuration package.
-- **Happy Path:**
-  - LLM receives toolbox, selects appropriate scraper and aux tools, and returns valid `UniversalConfigurationPackageFormatV1`.
-- **Other Paths:**
-  - LLM returns invalid/malformed JSON: error is handled, build status set to FAILED.
-  - LLM cannot identify suitable tool: error is handled, build status set to FAILED.
-
-#### Suite: `Sample Generation`
-- **Purpose:** Ensures sample data is generated using the selected tools.
-- **Happy Path:**
-  - Samples are generated for all target URLs using the configured tool(s).
-- **Other Paths:**
-  - Tool execution fails for a URL: partial success is recorded, error is logged.
-
-#### Suite: `Toolbox & MCP Compliance`
-- **Purpose:** Ensures all tools are MCP-compliant, discoverable, and invokable by name and schema.
-- **Happy Path:**
-  - All registered tools expose MCP metadata and can be listed and called.
-- **Other Paths:**
-  - Tool missing MCP definition: error is logged, tool is skipped.
-
----
-
-## How to Add New Tests
-- Place new feature/unit tests in a relevant subdirectory within the `tests` folder (e.g., `tests/modules/feature/feature.test.ts`).
-- For integration tests (like database or external service checks), place them in `tests/integration/` or directly in `tests/` if structure is simple.
-- For end-to-end or regression tests, add to `tests/regression/`.
-- Document each new test here under the appropriate section (Regression, Integration, Feature) with:
-  - **Purpose**
-  - **Happy Path**
-  - **Other Paths** (edge cases, error handling)
-
----
-
-## Notes
-- This document should be updated with every new feature or regression test.
-- The goal is to provide a single source of truth for test coverage, aiding both human operators and LLM agents in understanding the system's reliability and coverage.
+| # | File & Suite | Test Description | Status | Why this test? |
+|---|--------------|------------------|--------|----------------|
+| 1 | build.processor.test.ts / processBuildJob | should successfully process a build, call analysis, execute package, and update status | [SKIPPED] | Verifies the happy path: a build is processed end-to-end, invoking analysis, execution, and status updates. Ensures the core build pipeline works as intended. |
+| 2 | build.processor.test.ts / processBuildJob | should update status to FAILED if execution fails | [SKIPPED] | Ensures that if the execution phase fails, the build status is correctly set to FAILED, preventing silent errors. |
+| 3 | build.processor.test.ts / processBuildJob | should log a warning and return if build is not in PENDING_ANALYSIS state | [SKIPPED] | Confirms that the processor does not proceed with builds in an invalid state, enforcing state machine correctness. |
+| 4 | build.processor.test.ts / processBuildJob | should update status to FAILED if build has no target URLs | [SKIPPED] | Validates that builds missing target URLs are handled gracefully and marked as failed, improving robustness. |
+| 5 | build.processor.test.ts / processBuildJob | should handle errors during processing and update status to FAILED | [SKIPPED] | Ensures any unexpected error during processing results in a failed build, preventing stuck or inconsistent builds. |
+| 6 | build.processor.test.ts / processBuildJob | should handle errors during analysis and update status to FAILED | [SKIPPED] | Verifies that analysis errors are caught and cause the build to fail, maintaining clear error propagation. |
+| 7 | build.processor.test.ts / processBuildJob | should handle invalid JSON in target URLs and update status to FAILED | [SKIPPED] | Ensures that malformed target URL data does not crash the processor and is marked as a failure. |
+| 8 | build.processor.test.ts / processBuildJob | should handle errors during temp package update and update status to FAILED | [SKIPPED] | Confirms that errors when updating temporary package data are caught and result in a failed build. |
+| 9 | build.processor.test.ts / processBuildJob | should handle errors during sample results update and update status to FAILED | [SKIPPED] | Ensures that database errors during sample result updates do not leave builds in an inconsistent state. |
+| 10 | analysis.service.mcp.test.ts / AnalysisService MCP Mode | should use orchestrator MCP mode and return MCP stub package | [PASS] | Verifies that the analysis service can use the MCP orchestrator mode and return a valid MCP package, confirming protocol support. |
+| 11 | analysis.service.mcp.test.ts / AnalysisService MCP Mode | should handle MCP failure and return error | [PASS] | Ensures that MCP orchestrator errors are surfaced correctly to the caller, supporting robust error handling. |
+| 12 | database.integration.test.ts / Database Integration Tests | should connect to the PostgreSQL database successfully | [SKIPPED] | Confirms that the application can connect to the database, a critical infrastructure dependency. Skipped if DB is not available. |
+| 13 | modules/runs/runs.controller.test.ts / POST /runs | returns 200 and a run_id for valid input | [PASS] | Tests the main happy path for creating a run, ensuring the endpoint works for valid requests. |
+| 14 | modules/runs/runs.controller.test.ts / POST /runs | returns 400 for invalid input | [PASS] | Ensures that invalid input is rejected with a 400 error, validating input schema enforcement. |
+| 15 | orchestrator/unifiedOrchestrator.test.ts / UnifiedOrchestratorImpl | callTool returns correct mode and structure for mode: classic | [PASS] | Verifies that the orchestrator returns the correct response structure in classic mode. |
+| 16 | orchestrator/unifiedOrchestrator.test.ts / UnifiedOrchestratorImpl | callTool returns correct mode and structure for mode: mcp | [PASS] | Ensures that MCP mode returns the expected structure, confirming protocol compatibility. |
+| 17 | orchestrator/unifiedOrchestrator.test.ts / UnifiedOrchestratorImpl | callTool returns correct mode and structure for mode: both | [PASS] | Validates that dual mode returns the correct structure and mode field. |
+| 18 | orchestrator/unifiedOrchestrator.both.test.ts / UnifiedOrchestratorImpl (Dual Mode) | callTool (mode: both) should prefer MCP if both succeed | [PASS] | Ensures the orchestrator prefers MCP output if both classic and MCP succeed, matching the intended priority. |
+| 19 | orchestrator/unifiedOrchestrator.both.test.ts / UnifiedOrchestratorImpl (Dual Mode) | callTool (mode: both) should fallback to classic if MCP fails | [PASS] | Ensures fallback to classic mode if MCP fails, guaranteeing robustness in orchestrator logic. |
+| 20 | orchestrator/unifiedOrchestrator.mcp.test.ts / UnifiedOrchestratorImpl (MCP Mode) | callTool (mode: mcp) should use MCPClientStub and return stub output | [PASS] | Verifies MCP mode integration returns the expected stub output, confirming correct wiring. |
+| 21 | regression/get-build-status.validation.test.ts / GET /builds/:build_id input validation | should return 405 for missing build_id (root builds path) | [PASS] | Ensures that requests to /builds/ without an ID are rejected with a 405, enforcing RESTful API design. |
+| 22 | regression/get-build-status.validation.test.ts / GET /builds/:build_id input validation | should reject invalid build_id format with 400 | [PASS] | Validates that only UUIDs are accepted as build IDs, ensuring strict parameter validation. |
+| 23 | regression/get-build-status.validation.test.ts / GET /builds/:build_id input validation | should reject request with missing API key with 401 | [PASS] | Ensures authentication is required for build status queries, enforcing security. |
+| 24 | regression/get-build-status.validation.test.ts / GET /builds/:build_id input validation | should reject request with invalid API key with 401 | [PASS] | Ensures only valid API keys are accepted, protecting the endpoint from unauthorized access. |
+| 25 | regression/get-build-status.validation.test.ts / GET /builds/:build_id input validation | should return 405 for a valid build_id that does not exist | [PASS] | Confirms that requests for non-existent builds return the correct error, improving client feedback. |
+| 26 | regression/orchestrator.regression.test.ts / Orchestrator Regression Suite | classic mode: returns classic stub result | [PASS] | Ensures the orchestrator returns classic stub results in classic mode, verifying backward compatibility. |
+| 27 | regression/orchestrator.regression.test.ts / Orchestrator Regression Suite | mcp mode: returns MCP stub result | [PASS] | Confirms MCP mode returns stub results, validating protocol switching. |
+| 28 | regression/orchestrator.regression.test.ts / Orchestrator Regression Suite | both mode: prefers MCP if both succeed | [PASS] | Tests that dual mode prefers MCP results, matching design intent. |
+| 29 | regression/orchestrator.regression.test.ts / Orchestrator Regression Suite | both mode: falls back to classic if MCP fails | [PASS] | Ensures dual mode falls back to classic if MCP fails, for resilience. |
+| 30 | regression/the-brain-app.regression.test.ts / AnalysisResult type contract | should allow success=true only if package is present and error is absent | [PASS] | Validates the AnalysisResult type contract: success=true requires a package, no error. Prevents invalid states. |
+| 31 | regression/the-brain-app.regression.test.ts / AnalysisResult type contract | should allow success=false only if error is present and package is absent | [PASS] | Ensures that failed analysis results always include an error and no package, enforcing type safety. |
+| 32 | regression/the-brain-app.regression.test.ts / The Brain App - Regression Suite | processes a build end-to-end (happy path) | [PASS] | Verifies the full build processing pipeline, ensuring all major components work together as expected. |
+| 33 | regression/the-brain-app.regression.test.ts / The Brain App - Regression Suite | fails gracefully if no target URLs | [PASS] | Ensures the system fails gracefully and provides clear feedback when required input is missing. |
+| 34 | regression/the-brain-app.regression.test.ts / The Brain App - Regression Suite | handles analysis (LLM) failure | [PASS] | Verifies that LLM analysis errors are handled cleanly without crashing the system. |
+| 35 | regression/the-brain-app.regression.test.ts / The Brain App - Regression Suite | handles execution failure | [PASS] | Ensures that execution errors are caught and reported, maintaining stability. |
+| 36 | regression/the-brain-app.regression.test.ts / The Brain App - Regression Suite | handles invalid JSON in targetUrls | [PASS] | Validates the system's robustness against malformed input data. |
+| 37 | container.integration.test.ts / Container Integration Tests | should build and run a container image using Podman | [SKIPPED] | Checks that the application's container image can be built and run, supporting deployment and CI/CD. Skipped if Podman is not available. |

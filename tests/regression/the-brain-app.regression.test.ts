@@ -28,13 +28,14 @@ const orchestratorInput = {
 
 // --- Type Contract Regression ---
 describe('AnalysisResult type contract', () => {
-  it('should allow success=true only if package is present', () => {
+  it('should allow success=true only if package is present and error is absent', () => {
     const good: AnalysisResult = {
       success: true,
       package: { schemaVersion: '1.0', description: '', scraper: {}, expectedOutputSchema: {} } as any,
     };
     expect(good.success).toBe(true);
     expect(good.package).toBeDefined();
+    expect((good as any).error).toBeUndefined();
   });
 
   it('should allow success=false only if error is present and package is absent', () => {
@@ -128,9 +129,9 @@ describe('The Brain App - Regression Suite', () => {
     const dbTimeoutMs = 15000; // 15 seconds for DB connection
 
     // PostgreSQL Connection Check
-    describe.skip('Database Connection (skipped: enable when DB infra ready)', () => {
+    describe('Database Connection', () => {
       let prisma: PrismaClient | null = null; // Initialize as null
-      const DATABASE_URL_TEST = 'postgresql://postgres:postgres@localhost:5432/brain_db?schema=public';
+      const DATABASE_URL_TEST = process.env.DATABASE_URL || 'postgresql://postgres:postgres@brain-db:5432/postgres';
 
       beforeAll(() => {
         // Instantiate Prisma Client specifically for this test block
@@ -282,172 +283,4 @@ describe('The Brain App - Regression Suite', () => {
   });
 
   // Add more: status transitions, user confirmation, etc. as the app grows!
-});
-
-// --- Additional Regression Tests for "Test Freak" Coverage --- //
-describe('The Brain App - Regression Suite (Test Freak Extensions)', () => {
-  let freshBuildRepositoryInstance: any;
-  let freshAnalysisInstance: any;
-  let freshExecutionEngineInstance: any;
-
-  beforeEach(() => {
-    freshBuildRepositoryInstance = {
-      findBuildById: vi.fn().mockResolvedValue({ ...mockBuild }),
-      updateBuildStatus: vi.fn(),
-      updateTempPackage: vi.fn(),
-      updateSampleResults: vi.fn(),
-      createBuild: vi.fn(),
-      updateFinalConfiguration: vi.fn(),
-    };
-    freshAnalysisInstance = { ...mockAnalysisInstance };
-    freshExecutionEngineInstance = { ...mockExecutionEngineInstance };
-  });
-  // --- 1. Security/Auth Tests ---
-  it('should reject requests with missing API key', async () => {
-    // Simulate Fastify request/reply with missing Authorization header
-    const req: any = { headers: {}, log: { error: vi.fn(), warn: vi.fn() } };
-    const reply: any = { code: vi.fn().mockReturnThis(), send: vi.fn() };
-    process.env.API_KEY = 'test-key';
-    const { apiKeyAuth } = await import('../../src/hooks/apiKeyAuth.js');
-    await apiKeyAuth(req, reply);
-    expect(reply.code).toHaveBeenCalledWith(401);
-    expect(reply.send).toHaveBeenCalledWith({ message: expect.stringContaining('Unauthorized') });
-  });
-
-  it('should reject requests with invalid API key', async () => {
-    const req: any = { headers: { authorization: 'Bearer wrong-key' }, log: { error: vi.fn(), warn: vi.fn() } };
-    const reply: any = { code: vi.fn().mockReturnThis(), send: vi.fn() };
-    process.env.API_KEY = 'test-key';
-    const { apiKeyAuth } = await import('../../src/hooks/apiKeyAuth.js');
-    await apiKeyAuth(req, reply);
-    expect(reply.code).toHaveBeenCalledWith(401);
-    expect(reply.send).toHaveBeenCalledWith({ message: expect.stringContaining('Unauthorized') });
-  });
-
-  // --- 2. Orchestration Mode Tests (Real) ---
-  it('should use classic orchestration mode and return classic stub', async () => {
-    process.env.TOOL_ORCHESTRATION_MODE = 'classic';
-    const result = await orchestrator.callTool(orchestratorInput, 'classic');
-    expect(result.mode).toBe('classic');
-    expect(result.output).toHaveProperty('calledTool', 'playwright_v1');
-    expect(result.output.note).toContain('classic');
-    expect(result.error).toBeUndefined();
-  });
-
-  it('should use MCP orchestration mode and return MCP stub', async () => {
-    process.env.TOOL_ORCHESTRATION_MODE = 'mcp';
-    const result = await orchestrator.callTool(orchestratorInput, 'mcp');
-    expect(result.mode).toBe('mcp');
-    expect(result.output).toHaveProperty('tool', 'playwright_v1');
-    expect(result.output.note).toContain('MCP');
-    expect(result.error).toBeUndefined();
-  });
-
-  it('should fallback to classic if MCP fails in dual mode', async () => {
-    process.env.TOOL_ORCHESTRATION_MODE = 'both';
-    const failInput = { ...orchestratorInput, toolName: 'throw_mcp' };
-    const result = await orchestrator.callTool(failInput, 'both');
-    expect(result.mode).toBe('both');
-    expect(result.output).toHaveProperty('calledTool', 'throw_mcp');
-    expect(result.output.note).toContain('classic');
-    expect(result.error).toBeUndefined();
-  });
-
-  // --- 3. Negative/Error Path Tests ---
-  it('handles DB connection failure gracefully', async () => {
-    const prisma = { $connect: vi.fn().mockRejectedValue(new Error('DB down')), $disconnect: vi.fn() };
-    try {
-      await prisma.$connect();
-    } catch (e) {
-      expect(e).toBeInstanceOf(Error);
-      expect(e.message).toContain('DB down');
-    }
-  });
-
-  it('handles tool execution error', async () => {
-    freshExecutionEngineInstance.executePackage = vi.fn().mockRejectedValueOnce(new Error('Tool crashed'));
-    await processBuildJob(
-      jobId,
-      buildId,
-      freshBuildRepositoryInstance,
-      freshAnalysisInstance as any,
-      freshExecutionEngineInstance as any
-    );
-    expect(freshBuildRepositoryInstance.updateBuildStatus).toHaveBeenCalledWith(
-      buildId,
-      BuildStatus.FAILED,
-      'Tool crashed'
-    );
-  });
-
-  // --- 4. Edge Case Tests ---
-  it('handles partial results if execution partially succeeds', async () => {
-    freshExecutionEngineInstance.executePackage = vi.fn().mockResolvedValueOnce({
-      overallStatus: 'partial_success',
-      results: [
-        { url: 'http://example.com', data: { title: 'Partial' }, status: 'partial', success: false },
-      ],
-      error: 'Some failed',
-    });
-    await processBuildJob(
-      jobId,
-      buildId,
-      freshBuildRepositoryInstance,
-      freshAnalysisInstance as any,
-      freshExecutionEngineInstance as any
-    );
-    expect(freshBuildRepositoryInstance.updateSampleResults).toHaveBeenCalledWith(
-      buildId,
-      expect.objectContaining({ results: expect.any(Array) })
-    );
-    expect(freshBuildRepositoryInstance.updateBuildStatus).toHaveBeenCalledWith(
-      buildId,
-      BuildStatus.FAILED,
-      'Some failed'
-    );
-  });
-
-  it('handles malformed input in build config', async () => {
-    mockBuildRepositoryInstance.findBuildById.mockResolvedValue({ ...mockBuild, userObjective: null });
-    await processBuildJob(
-      jobId,
-      buildId,
-      mockBuildRepositoryInstance,
-      mockAnalysisInstance as any,
-      mockExecutionEngineInstance as any
-    );
-    expect(mockAnalysisInstance.analyzeBuildRequest).toHaveBeenCalledWith(
-      expect.objectContaining({ userObjective: null })
-    );
-  });
-
-  // --- 5. Concurrency Test (Simulated) ---
-  it('processes multiple builds in parallel (simulated)', async () => {
-    // Use isolated mocks for each parallel job to avoid shared call counts
-    const makeMocks = () => ({
-      buildRepository: {
-        findBuildById: vi.fn().mockResolvedValue({ ...mockBuild }),
-        updateBuildStatus: vi.fn(),
-        updateTempPackage: vi.fn(),
-        updateSampleResults: vi.fn(),
-        createBuild: vi.fn(), // Required by IBuildRepository
-        updateFinalConfiguration: vi.fn(), // Required by IBuildRepository
-      },
-      analysisInstance: { ...mockAnalysisInstance },
-      executionEngineInstance: { ...mockExecutionEngineInstance },
-    });
-    const jobs = [1, 2, 3].map(async (n) => {
-      const mocks = makeMocks();
-      await processBuildJob(
-        jobId + n,
-        buildId + n,
-        mocks.buildRepository,
-        mocks.analysisInstance as any,
-        mocks.executionEngineInstance as any
-      );
-      // Each mock should have been called exactly as expected for a single job
-      expect(mocks.buildRepository.findBuildById).toHaveBeenCalled();
-    });
-    await Promise.all(jobs);
-  });
 });

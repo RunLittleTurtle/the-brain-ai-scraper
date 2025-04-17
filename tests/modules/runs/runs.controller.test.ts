@@ -1,5 +1,7 @@
+process.env.MCP_RPC_URL = process.env.MCP_RPC_URL || 'http://dummy-mcp-rpc-url';
+process.env.MCP_SSE_URL = process.env.MCP_SSE_URL || 'http://dummy-mcp-sse-url';
 import { describe, it, expect } from 'vitest';
-import { buildApp } from '/Users/samuelaudette/Documents/Windsurf/the-brain-ai-scraper/src/app.ts'; // Absolute import for Vitest resolution
+import { buildApp } from '../../../dist/app.js'; // Fallback: import from built output
 import { Type } from '@sinclair/typebox';
 
 const validBody = {

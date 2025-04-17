@@ -6,5 +6,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
   },
+  resolve: {
+    extensions: ['.ts', '.js', '.mjs', '.json'],
+  },
   plugins: [tsconfigPaths()],
 });

@@ -5,11 +5,11 @@ import path from 'path';
 // Determine the project root directory relative to the test file location
 const projectRoot = path.resolve(__dirname, '..'); 
 
-describe.skip('Container Integration Tests', () => {
+describe('Container Integration Tests', () => {
   // Set a longer timeout for potentially slow builds
   const buildTimeoutMs = 300000; // 5 minutes
 
-  it('should build the Podman Docker image successfully', () => {
+  it.skip('should build the Podman Docker image successfully (skipped: requires Podman, best run in CI)', () => {
     const imageName = 'the-brain-test-image:latest'; 
     const buildCommand = `podman build -t ${imageName} .`;
 

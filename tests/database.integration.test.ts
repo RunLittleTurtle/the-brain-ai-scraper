@@ -3,9 +3,9 @@ import { PrismaClient } from '../src/generated/prisma/index.js';
 
 // Connection details based on docker-compose.yml
 // Assumes the 'db' service is running and port 5432 is exposed to localhost
-const DATABASE_URL_TEST = 'postgresql://postgres:postgres@localhost:5432/brain_db?schema=public';
+const DATABASE_URL_TEST = process.env.DATABASE_URL || 'postgresql://postgres:postgres@brain-db:5432/postgres';
 
-describe.skip('Database Integration Tests (skipped: enable when DB infra ready)', () => {
+describe('Database Integration Tests', () => {
   let prisma: PrismaClient;
 
   beforeAll(() => {

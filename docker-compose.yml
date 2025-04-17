@@ -11,6 +11,20 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  # Dedicated test database for running integration tests
+  brain-db-test:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: brain_db_test
+    # No ports exposed to host; only accessible from other containers
+    volumes:
+      - pgdata_test:/var/lib/postgresql/data
+    # Optionally, add a healthcheck here
+
   app:
     build: .
     depends_on:
@@ -25,5 +39,7 @@ services:
     command: npm run dev
     volumes:
       - .:/app
+
 volumes:
   pgdata:
+  pgdata_test:

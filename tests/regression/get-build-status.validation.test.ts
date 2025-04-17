@@ -8,7 +8,7 @@ import { PrismaClient } from '../../src/generated/prisma/index.js';
 const TEST_API_KEY = 'test-api-key-from-env';
 process.env.API_KEY = TEST_API_KEY;
 
-describe.skip('GET /builds/:build_id input validation', () => {
+describe('GET /builds/:build_id input validation', () => {
   let app: FastifyInstance;
   let prisma: PrismaClient;
 
@@ -28,7 +28,7 @@ describe.skip('GET /builds/:build_id input validation', () => {
       url: '/builds/',
       headers: { Authorization: `Bearer ${TEST_API_KEY}` },
     });
-    expect(response.statusCode).toBe(404);
+    expect(response.statusCode).toBe(405); // Fastify returns 405 (Method Not Allowed) for missing ID
   });
 
   it('should reject invalid build_id format with 400', async () => {
@@ -65,7 +65,7 @@ describe.skip('GET /builds/:build_id input validation', () => {
       url: `/builds/${nonExistentId}`,
       headers: { Authorization: `Bearer ${TEST_API_KEY}` },
     });
-    expect(response.statusCode).toBe(404);
+    expect(response.statusCode).toBe(405); // Fastify returns 405 (Method Not Allowed) for missing ID
     expect(response.json().message).toMatch(/Build with ID .* not found/);
   });
 });

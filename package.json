@@ -53,6 +53,7 @@
     "@vitest/utils": "^3.1.1",
     "concurrently": "^9.1.2",
     "copyfiles": "^2.4.1",
+    "cpx": "^1.5.0",
     "eslint": "^9.24.0",
     "fastify-plugin": "^5.0.1",
     "nodemon": "^3.1.9",

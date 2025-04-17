@@ -1,1 +1,1 @@
-import runsController from './modules/runs/runs.controller.js';
+import runsController from '../../modules/runs/runs.controller.js';
