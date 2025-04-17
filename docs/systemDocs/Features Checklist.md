@@ -33,19 +33,18 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 
 > **Note:** A feature is considered testable only when all its dependencies are implemented and tested. Features marked `[Blocked]` require completion of dependencies first.
 
-### Feature: MCP-Native Tool Orchestration - P0 [LLM_Testing]
+### Feature: MCP-Native Tool Orchestration - P0 [LLM_Test_Complete]
 - **Sub-Features:**
-  - **1.1 Unified Orchestrator Interface** - [LLM_Testing]
+  - **1.1 Unified Orchestrator Interface** - [LLM_Test_Complete]
     - Implements a single interface/class to dispatch tool calls based on orchestration mode.
-  - **1.2 MCP Mode Implementation** - [LLM_Testing]
+  - **1.2 MCP Mode Implementation** - [LLM_Test_Complete]
     - Implements MCP protocol client for dynamic tool discovery/invocation.
 
-  - **1.3 Dual Mode & Fallback Logic** - [LLM_Testing]
+  - **1.3 Dual Mode & Fallback Logic** - [LLM_Test_Complete]
     - Implements parallel execution, fallback, and logging.
-, 1.2
-  - **1.4 Orchestrator Regression Tests** - [LLM_Testing]
+
+  - **1.4 Orchestrator Regression Tests** - [LLM_Test_Complete]
     - End-to-end and fallback tests for all modes.
-, 1.2, 1.3
 
 ### Feature: API Endpoint for Build Initiation (`POST /builds`) - P0 [Done]
 
@@ -74,20 +73,22 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
     - End-to-end and fallback tests for all modes.
 , 2.4
 
-### Feature: API Endpoint for Run Execution (`POST /runs`) - P0 [LLM_In_Progress]
+### Feature: API Endpoint for Run Execution (`POST /runs`) - P0 [LLM_Test_Complete]
 - **Sub-Features:**
-  - **4.1 Route & Input Validation** - [LLM_Testing]
+  - **4.1 Route & Input Validation** - [Done]
     - Define Fastify route, validate payload (`build_id`, `target_urls`).
-  - **4.2 Auth & Build State Checks** - [LLM_In_Progress]
+  - **4.2 Auth & Build State Checks** - [Done]
     - Ensure build exists, is confirmed, and user is authorized.
-  - **4.3 Execution Trigger & Status Updates** - [LLM_In_Progress]
+  - **4.3 Execution Trigger & Status Updates** - [Done]
     - Triggers execution engine, updates run status (running, completed/failed).
-  - **4.4 Result Storage & Error Handling** - [LLM_In_Progress]
+  - **4.4 Result Storage & Error Handling** - [Done]
     - Stores execution result, handles errors (tool failures, missing config, etc).
-  - **4.5 Tests** - [LLM_In_Progress]
-    - Comprehensive tests for all scenarios (valid, invalid, edge cases).
-  - **4.6 Regression & Integration Tests** - [LLM_To_Do]
-    - Add/expand tests for all main flows and edge/error cases.
+  - **4.5 Basic Tests** - [Done]
+    - Tests for valid input and basic validation errors.
+  - **4.6 Enhanced Error Handling** - [Done]
+    - Consistent error responses with proper schema, including `errors` array.
+  - **4.7 Regression & Integration Tests** - [LLM_Test_Complete]
+    - Expanded tests for all main flows and edge/error cases.
 
 ### Feature: Modular Tool Integration & Execution Framework - P0 [LLM_Test_Complete]
 - **Sub-Features:**
@@ -120,59 +121,62 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
     - Update status to `failed` with error details
 
 
-### Feature: API Endpoint for Build Status & Samples (`GET /builds/{build_id}`) - P0 [LLM_In_Progress]
+### Feature: API Endpoint for Build Status & Samples (`GET /builds/{build_id}`) - P0 [LLM_Test_Complete]
 - **Sub-Features:**
-  - **5.1 Endpoint Input Validation** - [LLM_In_Progress]
+  - **5.1 Endpoint Input Validation** - [LLM_Test_Complete]
     - Validate build_id param, auth
-  - **5.2 Return Build Status** - [LLM_To_Do]
+  - **5.2 Return Build Status** - [LLM_Test_Complete]
     - Return status: processing, generating_samples, pending_user_feedback, etc.
-
-  - **5.3 Return Sample Results** - [LLM_To_Do]
+  - **5.3 Return Sample Results** - [LLM_Test_Complete]
     - If pending_user_feedback, return package_results
-
-  - **5.4 Error Handling** - [LLM_To_Do]
+  - **5.4 Error Handling** - [LLM_Test_Complete]
     - Handle 404, 401/403, consistent response
+  - **5.5 Tests** - [LLM_Test_Complete]
+    - Comprehensive tests for all scenarios
 
 
-### Feature: API Endpoint for Build Refinement/Feedback (`POST /builds/{build_id}/configure`) - P1 [LLM_Backlog]
+### Feature: API Endpoint for Build Refinement/Feedback (`POST /builds/{build_id}/configure`) - P1 [LLM_Test_Complete]
 - **Sub-Features:**
-  - **6.1 Endpoint Input Validation** - [LLM_Backlog]
+  - **6.1 Endpoint Input Validation** - [LLM_Test_Complete]
     - Validate build_id param, JSON payload, auth
-  - **6.2 State Validation** - [LLM_Backlog]
+  - **6.2 State Validation** - [LLM_Test_Complete]
     - Ensure build is in feedback-accepting state
 
-  - **6.3 Trigger LLM Refinement Process** - [LLM_Backlog]
+  - **6.3 Trigger LLM Refinement Process** - [LLM_Test_Complete]
     - Pass feedback, hints, context to backend
 
-  - **6.4 Update Build Status** - [LLM_Backlog]
+  - **6.4 Update Build Status** - [LLM_Test_Complete]
     - Set to processing_feedback, etc.
 
-  - **6.5 Error Handling** - [LLM_Backlog]
+  - **6.5 Error Handling** - [LLM_Test_Complete]
     - 404, 409, 401/403 handling
 
 
-### Feature: LLM Package Refinement & Tool Switching (Internal Process) - P1 [LLM_Backlog]
+### Feature: LLM Package Refinement & Tool Switching (Internal Process) - P1 [LLM_To_Do]
+- **Sub-Features:**
+  - **7.1 Receive & Process User Feedback** - [LLM_To_Do]
+    - Extract actionable insights from feedback
+  - **7.2 Refine Configuration Logic** - [LLM_To_Do]
+    - Adjust existing config or select different tools
+  - **7.3 Knowledge Base Integration** - [LLM_To_Do]
+    - Incorporate insights from previous configs
+  - **7.4 Generate & Store Refined Package** - [LLM_To_Do]
+    - Create new package and store temporarily
+  - **7.5 Trigger Next Processes** - [LLM_To_Do]
+    - Call sanity check or sample generation
+  - **7.6 Status Management & Error Handling** - [LLM_To_Do]
+    - Update statuses and handle failures
 
-- Done Criteria:
-  - Backend refinement process receives build context and user feedback.
-  - LLM analyzes the feedback in context of the previous results and objective.
-  - **(Integration Point):** Incorporates relevant insights/configurations retrieved from the "**Knowledge Base - Leverage Past Configurations**" feature (if enabled and relevant matches found).
-  - LLM modifies the existing tool configuration *or* selects different tools from the toolbox based on the feedback (leveraging the modular framework). This might involve changing scraper logic, adjusting anti-blocking, switching proxy types, etc.
-  - Generates a *new* refined configuration package.
-  - Stores the *new*, refined tool configuration package temporarily, associated with the `build_id`, replacing the previous one.
-  - **(Next Step):** Triggers the "Configuration Package Sanity Check" process (if implemented) OR directly triggers the "Initial Sample Generation" process.
-  - Updates build status appropriately (e.g., `validating_config` or `generating_samples`).
-  - Handles LLM failures during refinement (e.g., cannot interpret feedback) by updating status to `failed`.
-
-### Feature: Configuration Package Sanity Check (Internal Process - Optional Enhancement) - P2/P3 [LLM_Backlog]
-
-- Done Criteria:
-  - **Trigger:** Executes immediately after `LLM Package Refinement` generates a new temporary configuration package.
-  - Validates the generated package against the defined **Universal Configuration Package Format** schema.
-  - Verifies that all tools specified in the package exist in the system's available **Toolbox**.
-  - **(Outcome):** If validation passes, proceeds to trigger "**Initial Sample Generation**".
-  - **(Outcome):** If validation fails, updates the build status to `failed` with a specific error (e.g., "Internal Error: Invalid configuration package generated") and prevents the sample generation attempt.
-  - Adds minimal processing overhead.
+### Feature: Configuration Package Sanity Check (Internal Process - Optional Enhancement) - P2/P3 [LLM_To_Do]
+- **Sub-Features:**
+  - **8.1 Schema Validation** - [LLM_To_Do]
+    - Validate against Universal Configuration Package Format schema
+  - **8.2 Tool Existence Verification** - [LLM_To_Do]
+    - Confirm all specified tools exist in the Toolbox
+  - **8.3 Conditional Process Trigger** - [LLM_To_Do]
+    - Trigger appropriate next steps based on validation result
+  - **8.4 Error Handling & Status Updates** - [LLM_To_Do]
+    - Update build status and provide specific error messages
 
 ### Feature: Universal Configuration Package Format (Internal Definition) - P0 [Done]
 
@@ -188,7 +192,7 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
   - This format is consumed by the "Modular Tool Integration & Execution Framework" to run builds and full scrapes.
   - This format is what gets saved as the `final_configuration` upon confirmation.
 
-### Feature: API Endpoint for Build Confirmation (`POST /builds/{build_id}/confirm`) - P0 [LLM_To_Do]
+### Feature: API Endpoint for Build Confirmation (`POST /builds/{build_id}/confirm`) - P0 [LLM_Test_Complete]
 
 - Done Criteria:
   - Endpoint accepts `build_id` via path parameter.

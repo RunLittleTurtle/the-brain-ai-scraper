@@ -71,7 +71,7 @@ const runsController: FastifyPluginAsync = async (fastify: BaseFastifyInstance, 
     return reply.send(error);
   });
 
-  fastify.post<{ Body: CreateRunBody; Reply: RunRouteReply }>('', {
+  fastify.post<{ Body: CreateRunBody; Reply: RunRouteReply }>('/', {
     schema: {
       body: CreateRunBodySchema,
       response: {

@@ -47,9 +47,85 @@ export const createBuildSchema = {
 // Define response schema for GET...
 // export const getBuildSchema = { params: BuildIdParamsSchema, response: { 200: ..., 404: ... } };
 
-// --- Schemas for POST /builds/:id/confirm (Example) ---
-// Define body/response schemas for POST confirm...
-// export const confirmBuildSchema = { params: BuildIdParamsSchema, body: ..., response: { 200: ..., 404: ... } };
+// --- Schemas for POST /builds/:id/confirm ---
+// Parameter schema for build_id
+export const BuildIdParamsSchema = Type.Object({
+  build_id: Type.String({
+    // Removed format validation since 'cuid' isn't supported
+    minLength: 1,
+    description: 'The unique identifier for the build job.'
+  })
+});
+
+// Response schema for successful confirmation
+export const ConfirmBuildResponseSchema = Type.Object({
+  build_id: Type.String({ description: 'The unique ID of the confirmed build' }),
+  status: Type.Enum(BuildStatus, { description: 'The updated status of the build (should be CONFIRMED)' }),
+  message: Type.String({ description: 'Confirmation success message' })
+});
+
+// Combined schema for the route definition
+export const confirmBuildSchema = {
+  description: 'Confirm a build configuration for execution',
+  tags: ['builds'],
+  summary: 'Confirm Build Configuration',
+  params: BuildIdParamsSchema,
+  response: {
+    200: ConfirmBuildResponseSchema,
+    400: Type.Object({ message: Type.String() }), // Bad Request
+    404: Type.Object({ message: Type.String() }), // Not Found
+    409: Type.Object({ message: Type.String() }), // Conflict (wrong state)
+    500: Type.Object({ message: Type.String() })  // Server Error
+  }
+};
+
+// --- Schemas for POST /builds/:build_id/configure ---
+// Request body schema for build refinement
+export const ConfigureBuildBodySchema = Type.Object({
+  feedback: Type.String({
+    minLength: 1,
+    description: 'User feedback on the sample results to refine the build configuration'
+  }),
+  hints: Type.Optional(Type.Array(Type.String(), {
+    description: 'Optional hints or specific instructions to guide the refinement process'
+  })),
+  selectors: Type.Optional(Type.Record(Type.String(), Type.String(), {
+    description: 'Optional specific selectors to use for different data points'
+  })),
+  include_fields: Type.Optional(Type.Array(Type.String(), {
+    description: 'Optional list of fields to include in the results'
+  })),
+  exclude_fields: Type.Optional(Type.Array(Type.String(), {
+    description: 'Optional list of fields to exclude from the results'
+  }))
+});
+
+// Response schema for successful refinement initiation
+export const ConfigureBuildResponseSchema = Type.Object({
+  build_id: Type.String({ description: 'The unique ID of the build being refined' }),
+  status: Type.Enum(BuildStatus, { description: 'The updated status of the build after refinement request' }),
+  message: Type.String({ description: 'Refinement initiation success message' })
+});
+
+// Combined schema for the route definition
+export const configureBuildSchema = {
+  description: 'Submit feedback to refine a build configuration',
+  tags: ['builds'],
+  summary: 'Refine Build Configuration',
+  params: BuildIdParamsSchema,
+  body: ConfigureBuildBodySchema,
+  response: {
+    202: ConfigureBuildResponseSchema,
+    400: Type.Object({ message: Type.String() }), // Bad Request
+    404: Type.Object({ message: Type.String() }), // Not Found
+    409: Type.Object({ message: Type.String() }), // Conflict (wrong state)
+    500: Type.Object({ message: Type.String() })  // Server Error
+  }
+};
 
 // TypeBox Static types for TypeScript inference
 export type CreateBuildBody = Static<typeof CreateBuildBodySchema>;
+export type BuildIdParams = Static<typeof BuildIdParamsSchema>;
+export type ConfirmBuildResponse = Static<typeof ConfirmBuildResponseSchema>;
+export type ConfigureBuildBody = Static<typeof ConfigureBuildBodySchema>;
+export type ConfigureBuildResponse = Static<typeof ConfigureBuildResponseSchema>;

@@ -1,6 +1,7 @@
 import { Static, Type } from '@sinclair/typebox';
 import { PrismaClient, BuildStatus, Prisma, Build } from '../../generated/prisma/index.js'; 
 import { BuildRepository } from '../../infrastructure/db/build.repository.js'; 
+import { BuildIdParams, confirmBuildSchema, ConfirmBuildResponse, configureBuildSchema, ConfigureBuildBody, ConfigureBuildResponse } from './build.schema.js';
 import type {
     FastifyPluginAsync,
     FastifyRequest,
@@ -52,6 +53,17 @@ interface CreateBuildRoute {
 interface GetBuildStatusRoute {
     Params: GetBuildStatusParams;
     Reply: Static<typeof GetBuildStatusResponseSchema>; 
+}
+
+interface ConfirmBuildRoute {
+    Params: BuildIdParams;
+    Reply: ConfirmBuildResponse;
+}
+
+interface ConfigureBuildRoute {
+    Params: BuildIdParams;
+    Body: ConfigureBuildBody;
+    Reply: ConfigureBuildResponse;
 }
 
 // --- Controller Plugin --- //
@@ -189,11 +201,187 @@ const buildsController: FastifyPluginAsync = async (fastify: BaseFastifyInstance
         }
     );
 
-    // Default handler for unhandled methods on /builds
+    // POST /builds/:build_id/confirm - Confirm a build configuration
+    fastify.post<ConfirmBuildRoute>(
+        '/:build_id/confirm',
+        {
+            schema: confirmBuildSchema
+        },
+        async (request: FastifyRequest<ConfirmBuildRoute>, reply: FastifyReply) => {
+            const { build_id } = request.params;
+            fastify.log.info({ msg: 'Processing build confirmation request', build_id });
+            
+            try {
+                const prisma: PrismaClient = fastify.prisma;
+                const buildRepository = new BuildRepository(prisma);
+                
+                // 1. Find the build and check if it exists
+                const build = await buildRepository.findBuildById(build_id);
+                if (!build) {
+                    fastify.log.warn(`Build with ID ${build_id} not found.`);
+                    return reply.notFound(`Build with ID ${build_id} not found.`);
+                }
+                
+                // 2. Validate that the build is in a confirmable state
+                if (build.status !== BuildStatus.PENDING_USER_FEEDBACK) {
+                    fastify.log.warn(`Cannot confirm build ${build_id} - invalid status: ${build.status}`);
+                    return reply.status(409).send({
+                        message: `Cannot confirm build in ${build.status} state. Build must be in ${BuildStatus.PENDING_USER_FEEDBACK} state.`
+                    });
+                }
+                
+                // 3. Verify that we have sample results and initial configuration package
+                if (!build.sampleResultsJson || !build.initialPackageJson) {
+                    fastify.log.error(`Build ${build_id} is missing required data for confirmation.`);
+                    return reply.status(500).send({
+                        message: 'Build is missing required data for confirmation (sample results or configuration).'
+                    });
+                }
+                
+                // 4. Update the build status to confirmed and save the configuration
+                try {
+                    const updatedBuild = await prisma.build.update({
+                        where: { id: build_id },
+                        data: {
+                            status: BuildStatus.CONFIRMED,
+                            finalConfigurationJson: build.initialPackageJson,
+                            updatedAt: new Date()
+                        }
+                    });
+                    
+                    fastify.log.info(`Build ${build_id} successfully confirmed.`);
+                    
+                    return reply.status(200).send({
+                        build_id: updatedBuild.id,
+                        status: updatedBuild.status,
+                        message: 'Build configuration successfully confirmed.'
+                    });
+                    
+                } catch (updateError) {
+                    fastify.log.error(`Error updating build ${build_id} status:`, updateError);
+                    return reply.internalServerError('Failed to update build status.');
+                }
+                
+            } catch (error) {
+                fastify.log.error(`Unexpected error during build confirmation:`, error);
+                return reply.internalServerError('An unexpected error occurred while processing the confirmation.');
+            }
+        }
+    );
+
+    // Default handler for unhandled methods on /builds root path
     fastify.route({
-        method: ['GET', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
+        method: ['PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
         url: '/',
         handler: async (request: FastifyRequest, reply: FastifyReply) => {
+            reply.methodNotAllowed();
+        }
+    });
+    
+    // Handle GET on root path - should return 405 Method Not Allowed for consistency
+    fastify.get('/', {
+        handler: async (request: FastifyRequest, reply: FastifyReply) => {
+            reply.methodNotAllowed();
+        }
+    });
+    
+    // POST /builds/:build_id/configure - Submit feedback to refine a build configuration
+    fastify.post<ConfigureBuildRoute>(
+        '/:build_id/configure',
+        {
+            schema: configureBuildSchema
+        },
+        async (request: FastifyRequest<ConfigureBuildRoute>, reply: FastifyReply) => {
+            const { build_id } = request.params;
+            const { feedback, hints, selectors, include_fields, exclude_fields } = request.body;
+            
+            fastify.log.info({ msg: 'Processing build refinement request', build_id });
+            
+            try {
+                const prisma: PrismaClient = fastify.prisma;
+                const buildRepository = new BuildRepository(prisma);
+                
+                // 1. Find the build and check if it exists
+                const build = await buildRepository.findBuildById(build_id);
+                if (!build) {
+                    fastify.log.warn(`Build with ID ${build_id} not found.`);
+                    return reply.notFound(`Build with ID ${build_id} not found.`);
+                }
+                
+                // 2. Validate that the build is in a refinable state
+                // Only builds in PENDING_USER_FEEDBACK state can be refined
+                if (build.status !== BuildStatus.PENDING_USER_FEEDBACK) {
+                    fastify.log.warn(`Cannot refine build ${build_id} - invalid status: ${build.status}`);
+                    return reply.status(409).send({
+                        message: `Cannot refine build in ${build.status} state. Build must be in ${BuildStatus.PENDING_USER_FEEDBACK} state.`
+                    });
+                }
+                
+                // 3. Update the build status to PROCESSING_FEEDBACK
+                try {
+                    const updatedBuild = await prisma.build.update({
+                        where: { id: build_id },
+                        data: {
+                            status: BuildStatus.PROCESSING_FEEDBACK,
+                            updatedAt: new Date()
+                        }
+                    });
+                    
+                    // 4. Prepare feedback data for future LLM refinement process
+                    const feedbackData = {
+                        feedback,
+                        hints: hints || [],
+                        selectors: selectors || {},
+                        include_fields: include_fields || [],
+                        exclude_fields: exclude_fields || [],
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    // Store feedback in database - temporarily use initialPackageJson to store feedback
+                    // since userFeedbackJson column isn't available yet
+                    const feedbackAndConfig = {
+                        originalConfig: build.initialPackageJson,
+                        feedback: feedbackData
+                    };
+                    
+                    await prisma.build.update({
+                        where: { id: build_id },
+                        data: {
+                            initialPackageJson: feedbackAndConfig,
+                        }
+                    });
+                    
+                    // 5. Trigger async LLM refinement process
+                    // TODO: Implement actual LLM refinement process
+                    // This will be implemented as part of the LLM Package Refinement & Tool Switching feature
+                    
+                    fastify.log.info(`Build ${build_id} refinement initiated successfully.`);
+                    
+                    // 6. Return success response
+                    return reply.status(202).send({
+                        build_id: updatedBuild.id,
+                        status: updatedBuild.status,
+                        message: 'Build refinement initiated successfully.'
+                    });
+                    
+                } catch (updateError) {
+                    fastify.log.error(`Error updating build ${build_id} status:`, updateError);
+                    return reply.internalServerError('Failed to update build status.');
+                }
+                
+            } catch (error) {
+                fastify.log.error(`Unexpected error during build refinement:`, error);
+                return reply.internalServerError('An unexpected error occurred while processing the refinement request.');
+            }
+        }
+    );
+
+    // Handle missing build_id in paths like /builds/ with trailing slash
+    fastify.route({
+        method: ['GET', 'PUT', 'DELETE', 'PATCH', 'POST', 'HEAD', 'OPTIONS'],
+        url: '/*',
+        handler: async (request: FastifyRequest, reply: FastifyReply) => {
+            // If not caught by other routes, return Method Not Allowed
             reply.methodNotAllowed();
         }
     });
