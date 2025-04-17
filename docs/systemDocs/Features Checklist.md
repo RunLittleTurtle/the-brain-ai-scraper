@@ -74,18 +74,18 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
     - End-to-end and fallback tests for all modes.
 , 2.4
 
-### Feature: API Endpoint for Run Execution (`POST /runs`) - P0 [LLM_To_Do]
+### Feature: API Endpoint for Run Execution (`POST /runs`) - P0 [LLM_In_Progress]
 - **Sub-Features:**
-  - **4.1 Route & Input Validation** - [LLM_In_Progress]
+  - **4.1 Route & Input Validation** - [LLM_Testing]
     - Define Fastify route, validate payload (`build_id`, `target_urls`).
-  - **4.2 Auth & Build State Checks** - [LLM_To_Do]
+  - **4.2 Auth & Build State Checks** - [LLM_In_Progress]
     - Ensure build exists, is confirmed, and user is authorized.
-  - **4.3 Run Record Creation** - [LLM_To_Do]
-    - Generate and persist new run record, assign unique `run_id`.
-  - **4.4 Trigger Execution Engine** - [LLM_To_Do]
-    - Start async execution of configuration package against all target URLs.
-  - **4.5 Response & Error Handling** - [LLM_To_Do]
-    - Return `202 Accepted` with `run_id`, handle validation/auth errors.
+  - **4.3 Execution Trigger & Status Updates** - [LLM_In_Progress]
+    - Triggers execution engine, updates run status (running, completed/failed).
+  - **4.4 Result Storage & Error Handling** - [LLM_In_Progress]
+    - Stores execution result, handles errors (tool failures, missing config, etc).
+  - **4.5 Tests** - [LLM_In_Progress]
+    - Comprehensive tests for all scenarios (valid, invalid, edge cases).
   - **4.6 Regression & Integration Tests** - [LLM_To_Do]
     - Add/expand tests for all main flows and edge/error cases.
 

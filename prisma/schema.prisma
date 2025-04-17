@@ -41,5 +41,27 @@ model Build {
 
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
+  runs                  Run[]       // Relation to Run model
 }
+// --- Run Status Enum ---
+enum RunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// --- Run Model ---
+model Run {
+  id          String    @id @default(uuid()) // Use UUID for run IDs
+  buildId     String
+  build       Build     @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  targetUrls  String    // Array of target URLs (JSON string)
+  status      RunStatus @default(PENDING)
+  resultJson  Json?
+  error       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 // Optional: Add relations later if needed (e.g., to Runs, User)

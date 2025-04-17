@@ -18,6 +18,11 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
  * 
  */
 export type Build = $Result.DefaultSelection<Prisma.$BuildPayload>
+/**
+ * Model Run
+ * 
+ */
+export type Run = $Result.DefaultSelection<Prisma.$RunPayload>
 
 /**
  * Enums
@@ -35,11 +40,25 @@ export namespace $Enums {
 
 export type BuildStatus = (typeof BuildStatus)[keyof typeof BuildStatus]
 
+
+export const RunStatus: {
+  PENDING: 'PENDING',
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+};
+
+export type RunStatus = (typeof RunStatus)[keyof typeof RunStatus]
+
 }
 
 export type BuildStatus = $Enums.BuildStatus
 
 export const BuildStatus: typeof $Enums.BuildStatus
+
+export type RunStatus = $Enums.RunStatus
+
+export const RunStatus: typeof $Enums.RunStatus
 
 /**
  * ##  Prisma Client ʲˢ
@@ -175,6 +194,16 @@ export class PrismaClient<
     * ```
     */
   get build(): Prisma.BuildDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.run`: Exposes CRUD operations for the **Run** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Runs
+    * const runs = await prisma.run.findMany()
+    * ```
+    */
+  get run(): Prisma.RunDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -615,7 +644,8 @@ export namespace Prisma {
 
 
   export const ModelName: {
-    Build: 'Build'
+    Build: 'Build',
+    Run: 'Run'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -634,7 +664,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "build"
+      modelProps: "build" | "run"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -709,6 +739,80 @@ export namespace Prisma {
           count: {
             args: Prisma.BuildCountArgs<ExtArgs>
             result: $Utils.Optional<BuildCountAggregateOutputType> | number
+          }
+        }
+      }
+      Run: {
+        payload: Prisma.$RunPayload<ExtArgs>
+        fields: Prisma.RunFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.RunFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RunPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.RunFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RunPayload>
+          }
+          findFirst: {
+            args: Prisma.RunFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RunPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.RunFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RunPayload>
+          }
+          findMany: {
+            args: Prisma.RunFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RunPayload>[]
+          }
+          create: {
+            args: Prisma.RunCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RunPayload>
+          }
+          createMany: {
+            args: Prisma.RunCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.RunCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RunPayload>[]
+          }
+          delete: {
+            args: Prisma.RunDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RunPayload>
+          }
+          update: {
+            args: Prisma.RunUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RunPayload>
+          }
+          deleteMany: {
+            args: Prisma.RunDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.RunUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.RunUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RunPayload>[]
+          }
+          upsert: {
+            args: Prisma.RunUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RunPayload>
+          }
+          aggregate: {
+            args: Prisma.RunAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRun>
+          }
+          groupBy: {
+            args: Prisma.RunGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RunGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.RunCountArgs<ExtArgs>
+            result: $Utils.Optional<RunCountAggregateOutputType> | number
           }
         }
       }
@@ -797,6 +901,7 @@ export namespace Prisma {
   }
   export type GlobalOmitConfig = {
     build?: BuildOmit
+    run?: RunOmit
   }
 
   /* Types for Logging */
@@ -885,6 +990,36 @@ export namespace Prisma {
    * Count Types
    */
 
+
+  /**
+   * Count Type BuildCountOutputType
+   */
+
+  export type BuildCountOutputType = {
+    runs: number
+  }
+
+  export type BuildCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    runs?: boolean | BuildCountOutputTypeCountRunsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * BuildCountOutputType without action
+   */
+  export type BuildCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the BuildCountOutputType
+     */
+    select?: BuildCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * BuildCountOutputType without action
+   */
+  export type BuildCountOutputTypeCountRunsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RunWhereInput
+  }
 
 
   /**
@@ -1091,6 +1226,8 @@ export namespace Prisma {
     finalConfigurationJson?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    runs?: boolean | Build$runsArgs<ExtArgs>
+    _count?: boolean | BuildCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["build"]>
 
   export type BuildSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -1136,10 +1273,18 @@ export namespace Prisma {
   }
 
   export type BuildOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "targetUrls" | "userObjective" | "status" | "error" | "initialPackageJson" | "sampleResultsJson" | "finalConfigurationJson" | "createdAt" | "updatedAt", ExtArgs["result"]["build"]>
+  export type BuildInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    runs?: boolean | Build$runsArgs<ExtArgs>
+    _count?: boolean | BuildCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type BuildIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type BuildIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
 
   export type $BuildPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Build"
-    objects: {}
+    objects: {
+      runs: Prisma.$RunPayload<ExtArgs>[]
+    }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       userId: string | null
@@ -1546,6 +1691,7 @@ export namespace Prisma {
    */
   export interface Prisma__BuildClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    runs<T extends Build$runsArgs<ExtArgs> = {}>(args?: Subset<T, Build$runsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1603,6 +1749,10 @@ export namespace Prisma {
      */
     omit?: BuildOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: BuildInclude<ExtArgs> | null
+    /**
      * Filter, which Build to fetch.
      */
     where: BuildWhereUniqueInput
@@ -1621,6 +1771,10 @@ export namespace Prisma {
      */
     omit?: BuildOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: BuildInclude<ExtArgs> | null
+    /**
      * Filter, which Build to fetch.
      */
     where: BuildWhereUniqueInput
@@ -1638,6 +1792,10 @@ export namespace Prisma {
      * Omit specific fields from the Build
      */
     omit?: BuildOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: BuildInclude<ExtArgs> | null
     /**
      * Filter, which Build to fetch.
      */
@@ -1687,6 +1845,10 @@ export namespace Prisma {
      */
     omit?: BuildOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: BuildInclude<ExtArgs> | null
+    /**
      * Filter, which Build to fetch.
      */
     where?: BuildWhereInput
@@ -1735,6 +1897,10 @@ export namespace Prisma {
      */
     omit?: BuildOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: BuildInclude<ExtArgs> | null
+    /**
      * Filter, which Builds to fetch.
      */
     where?: BuildWhereInput
@@ -1777,6 +1943,10 @@ export namespace Prisma {
      * Omit specific fields from the Build
      */
     omit?: BuildOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: BuildInclude<ExtArgs> | null
     /**
      * The data needed to create a Build.
      */
@@ -1825,6 +1995,10 @@ export namespace Prisma {
      * Omit specific fields from the Build
      */
     omit?: BuildOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: BuildInclude<ExtArgs> | null
     /**
      * The data needed to update a Build.
      */
@@ -1892,6 +2066,10 @@ export namespace Prisma {
      */
     omit?: BuildOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: BuildInclude<ExtArgs> | null
+    /**
      * The filter to search for the Build to update in case it exists.
      */
     where: BuildWhereUniqueInput
@@ -1918,6 +2096,10 @@ export namespace Prisma {
      */
     omit?: BuildOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: BuildInclude<ExtArgs> | null
+    /**
      * Filter which Build to delete.
      */
     where: BuildWhereUniqueInput
@@ -1938,6 +2120,30 @@ export namespace Prisma {
   }
 
   /**
+   * Build.runs
+   */
+  export type Build$runsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunInclude<ExtArgs> | null
+    where?: RunWhereInput
+    orderBy?: RunOrderByWithRelationInput | RunOrderByWithRelationInput[]
+    cursor?: RunWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RunScalarFieldEnum | RunScalarFieldEnum[]
+  }
+
+  /**
    * Build without action
    */
   export type BuildDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -1949,6 +2155,1103 @@ export namespace Prisma {
      * Omit specific fields from the Build
      */
     omit?: BuildOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: BuildInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Run
+   */
+
+  export type AggregateRun = {
+    _count: RunCountAggregateOutputType | null
+    _min: RunMinAggregateOutputType | null
+    _max: RunMaxAggregateOutputType | null
+  }
+
+  export type RunMinAggregateOutputType = {
+    id: string | null
+    buildId: string | null
+    targetUrls: string | null
+    status: $Enums.RunStatus | null
+    error: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type RunMaxAggregateOutputType = {
+    id: string | null
+    buildId: string | null
+    targetUrls: string | null
+    status: $Enums.RunStatus | null
+    error: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type RunCountAggregateOutputType = {
+    id: number
+    buildId: number
+    targetUrls: number
+    status: number
+    resultJson: number
+    error: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type RunMinAggregateInputType = {
+    id?: true
+    buildId?: true
+    targetUrls?: true
+    status?: true
+    error?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type RunMaxAggregateInputType = {
+    id?: true
+    buildId?: true
+    targetUrls?: true
+    status?: true
+    error?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type RunCountAggregateInputType = {
+    id?: true
+    buildId?: true
+    targetUrls?: true
+    status?: true
+    resultJson?: true
+    error?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type RunAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Run to aggregate.
+     */
+    where?: RunWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Runs to fetch.
+     */
+    orderBy?: RunOrderByWithRelationInput | RunOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: RunWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Runs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Runs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Runs
+    **/
+    _count?: true | RunCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RunMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RunMaxAggregateInputType
+  }
+
+  export type GetRunAggregateType<T extends RunAggregateArgs> = {
+        [P in keyof T & keyof AggregateRun]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRun[P]>
+      : GetScalarType<T[P], AggregateRun[P]>
+  }
+
+
+
+
+  export type RunGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RunWhereInput
+    orderBy?: RunOrderByWithAggregationInput | RunOrderByWithAggregationInput[]
+    by: RunScalarFieldEnum[] | RunScalarFieldEnum
+    having?: RunScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RunCountAggregateInputType | true
+    _min?: RunMinAggregateInputType
+    _max?: RunMaxAggregateInputType
+  }
+
+  export type RunGroupByOutputType = {
+    id: string
+    buildId: string
+    targetUrls: string
+    status: $Enums.RunStatus
+    resultJson: JsonValue | null
+    error: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: RunCountAggregateOutputType | null
+    _min: RunMinAggregateOutputType | null
+    _max: RunMaxAggregateOutputType | null
+  }
+
+  type GetRunGroupByPayload<T extends RunGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<RunGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RunGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RunGroupByOutputType[P]>
+            : GetScalarType<T[P], RunGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type RunSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    buildId?: boolean
+    targetUrls?: boolean
+    status?: boolean
+    resultJson?: boolean
+    error?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    build?: boolean | BuildDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["run"]>
+
+  export type RunSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    buildId?: boolean
+    targetUrls?: boolean
+    status?: boolean
+    resultJson?: boolean
+    error?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    build?: boolean | BuildDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["run"]>
+
+  export type RunSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    buildId?: boolean
+    targetUrls?: boolean
+    status?: boolean
+    resultJson?: boolean
+    error?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    build?: boolean | BuildDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["run"]>
+
+  export type RunSelectScalar = {
+    id?: boolean
+    buildId?: boolean
+    targetUrls?: boolean
+    status?: boolean
+    resultJson?: boolean
+    error?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type RunOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "buildId" | "targetUrls" | "status" | "resultJson" | "error" | "createdAt" | "updatedAt", ExtArgs["result"]["run"]>
+  export type RunInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    build?: boolean | BuildDefaultArgs<ExtArgs>
+  }
+  export type RunIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    build?: boolean | BuildDefaultArgs<ExtArgs>
+  }
+  export type RunIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    build?: boolean | BuildDefaultArgs<ExtArgs>
+  }
+
+  export type $RunPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Run"
+    objects: {
+      build: Prisma.$BuildPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      buildId: string
+      targetUrls: string
+      status: $Enums.RunStatus
+      resultJson: Prisma.JsonValue | null
+      error: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["run"]>
+    composites: {}
+  }
+
+  type RunGetPayload<S extends boolean | null | undefined | RunDefaultArgs> = $Result.GetResult<Prisma.$RunPayload, S>
+
+  type RunCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<RunFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: RunCountAggregateInputType | true
+    }
+
+  export interface RunDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Run'], meta: { name: 'Run' } }
+    /**
+     * Find zero or one Run that matches the filter.
+     * @param {RunFindUniqueArgs} args - Arguments to find a Run
+     * @example
+     * // Get one Run
+     * const run = await prisma.run.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends RunFindUniqueArgs>(args: SelectSubset<T, RunFindUniqueArgs<ExtArgs>>): Prisma__RunClient<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Run that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {RunFindUniqueOrThrowArgs} args - Arguments to find a Run
+     * @example
+     * // Get one Run
+     * const run = await prisma.run.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends RunFindUniqueOrThrowArgs>(args: SelectSubset<T, RunFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RunClient<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Run that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RunFindFirstArgs} args - Arguments to find a Run
+     * @example
+     * // Get one Run
+     * const run = await prisma.run.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends RunFindFirstArgs>(args?: SelectSubset<T, RunFindFirstArgs<ExtArgs>>): Prisma__RunClient<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Run that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RunFindFirstOrThrowArgs} args - Arguments to find a Run
+     * @example
+     * // Get one Run
+     * const run = await prisma.run.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends RunFindFirstOrThrowArgs>(args?: SelectSubset<T, RunFindFirstOrThrowArgs<ExtArgs>>): Prisma__RunClient<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Runs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RunFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Runs
+     * const runs = await prisma.run.findMany()
+     * 
+     * // Get first 10 Runs
+     * const runs = await prisma.run.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const runWithIdOnly = await prisma.run.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends RunFindManyArgs>(args?: SelectSubset<T, RunFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Run.
+     * @param {RunCreateArgs} args - Arguments to create a Run.
+     * @example
+     * // Create one Run
+     * const Run = await prisma.run.create({
+     *   data: {
+     *     // ... data to create a Run
+     *   }
+     * })
+     * 
+     */
+    create<T extends RunCreateArgs>(args: SelectSubset<T, RunCreateArgs<ExtArgs>>): Prisma__RunClient<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Runs.
+     * @param {RunCreateManyArgs} args - Arguments to create many Runs.
+     * @example
+     * // Create many Runs
+     * const run = await prisma.run.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends RunCreateManyArgs>(args?: SelectSubset<T, RunCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Runs and returns the data saved in the database.
+     * @param {RunCreateManyAndReturnArgs} args - Arguments to create many Runs.
+     * @example
+     * // Create many Runs
+     * const run = await prisma.run.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Runs and only return the `id`
+     * const runWithIdOnly = await prisma.run.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends RunCreateManyAndReturnArgs>(args?: SelectSubset<T, RunCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Run.
+     * @param {RunDeleteArgs} args - Arguments to delete one Run.
+     * @example
+     * // Delete one Run
+     * const Run = await prisma.run.delete({
+     *   where: {
+     *     // ... filter to delete one Run
+     *   }
+     * })
+     * 
+     */
+    delete<T extends RunDeleteArgs>(args: SelectSubset<T, RunDeleteArgs<ExtArgs>>): Prisma__RunClient<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Run.
+     * @param {RunUpdateArgs} args - Arguments to update one Run.
+     * @example
+     * // Update one Run
+     * const run = await prisma.run.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends RunUpdateArgs>(args: SelectSubset<T, RunUpdateArgs<ExtArgs>>): Prisma__RunClient<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Runs.
+     * @param {RunDeleteManyArgs} args - Arguments to filter Runs to delete.
+     * @example
+     * // Delete a few Runs
+     * const { count } = await prisma.run.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends RunDeleteManyArgs>(args?: SelectSubset<T, RunDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Runs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RunUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Runs
+     * const run = await prisma.run.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends RunUpdateManyArgs>(args: SelectSubset<T, RunUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Runs and returns the data updated in the database.
+     * @param {RunUpdateManyAndReturnArgs} args - Arguments to update many Runs.
+     * @example
+     * // Update many Runs
+     * const run = await prisma.run.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Runs and only return the `id`
+     * const runWithIdOnly = await prisma.run.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends RunUpdateManyAndReturnArgs>(args: SelectSubset<T, RunUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Run.
+     * @param {RunUpsertArgs} args - Arguments to update or create a Run.
+     * @example
+     * // Update or create a Run
+     * const run = await prisma.run.upsert({
+     *   create: {
+     *     // ... data to create a Run
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Run we want to update
+     *   }
+     * })
+     */
+    upsert<T extends RunUpsertArgs>(args: SelectSubset<T, RunUpsertArgs<ExtArgs>>): Prisma__RunClient<$Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Runs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RunCountArgs} args - Arguments to filter Runs to count.
+     * @example
+     * // Count the number of Runs
+     * const count = await prisma.run.count({
+     *   where: {
+     *     // ... the filter for the Runs we want to count
+     *   }
+     * })
+    **/
+    count<T extends RunCountArgs>(
+      args?: Subset<T, RunCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RunCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Run.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RunAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RunAggregateArgs>(args: Subset<T, RunAggregateArgs>): Prisma.PrismaPromise<GetRunAggregateType<T>>
+
+    /**
+     * Group by Run.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RunGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RunGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RunGroupByArgs['orderBy'] }
+        : { orderBy?: RunGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RunGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRunGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Run model
+   */
+  readonly fields: RunFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Run.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__RunClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    build<T extends BuildDefaultArgs<ExtArgs> = {}>(args?: Subset<T, BuildDefaultArgs<ExtArgs>>): Prisma__BuildClient<$Result.GetResult<Prisma.$BuildPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Run model
+   */
+  interface RunFieldRefs {
+    readonly id: FieldRef<"Run", 'String'>
+    readonly buildId: FieldRef<"Run", 'String'>
+    readonly targetUrls: FieldRef<"Run", 'String'>
+    readonly status: FieldRef<"Run", 'RunStatus'>
+    readonly resultJson: FieldRef<"Run", 'Json'>
+    readonly error: FieldRef<"Run", 'String'>
+    readonly createdAt: FieldRef<"Run", 'DateTime'>
+    readonly updatedAt: FieldRef<"Run", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Run findUnique
+   */
+  export type RunFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunInclude<ExtArgs> | null
+    /**
+     * Filter, which Run to fetch.
+     */
+    where: RunWhereUniqueInput
+  }
+
+  /**
+   * Run findUniqueOrThrow
+   */
+  export type RunFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunInclude<ExtArgs> | null
+    /**
+     * Filter, which Run to fetch.
+     */
+    where: RunWhereUniqueInput
+  }
+
+  /**
+   * Run findFirst
+   */
+  export type RunFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunInclude<ExtArgs> | null
+    /**
+     * Filter, which Run to fetch.
+     */
+    where?: RunWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Runs to fetch.
+     */
+    orderBy?: RunOrderByWithRelationInput | RunOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Runs.
+     */
+    cursor?: RunWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Runs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Runs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Runs.
+     */
+    distinct?: RunScalarFieldEnum | RunScalarFieldEnum[]
+  }
+
+  /**
+   * Run findFirstOrThrow
+   */
+  export type RunFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunInclude<ExtArgs> | null
+    /**
+     * Filter, which Run to fetch.
+     */
+    where?: RunWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Runs to fetch.
+     */
+    orderBy?: RunOrderByWithRelationInput | RunOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Runs.
+     */
+    cursor?: RunWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Runs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Runs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Runs.
+     */
+    distinct?: RunScalarFieldEnum | RunScalarFieldEnum[]
+  }
+
+  /**
+   * Run findMany
+   */
+  export type RunFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunInclude<ExtArgs> | null
+    /**
+     * Filter, which Runs to fetch.
+     */
+    where?: RunWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Runs to fetch.
+     */
+    orderBy?: RunOrderByWithRelationInput | RunOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Runs.
+     */
+    cursor?: RunWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Runs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Runs.
+     */
+    skip?: number
+    distinct?: RunScalarFieldEnum | RunScalarFieldEnum[]
+  }
+
+  /**
+   * Run create
+   */
+  export type RunCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Run.
+     */
+    data: XOR<RunCreateInput, RunUncheckedCreateInput>
+  }
+
+  /**
+   * Run createMany
+   */
+  export type RunCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Runs.
+     */
+    data: RunCreateManyInput | RunCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Run createManyAndReturn
+   */
+  export type RunCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * The data used to create many Runs.
+     */
+    data: RunCreateManyInput | RunCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Run update
+   */
+  export type RunUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Run.
+     */
+    data: XOR<RunUpdateInput, RunUncheckedUpdateInput>
+    /**
+     * Choose, which Run to update.
+     */
+    where: RunWhereUniqueInput
+  }
+
+  /**
+   * Run updateMany
+   */
+  export type RunUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Runs.
+     */
+    data: XOR<RunUpdateManyMutationInput, RunUncheckedUpdateManyInput>
+    /**
+     * Filter which Runs to update
+     */
+    where?: RunWhereInput
+    /**
+     * Limit how many Runs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Run updateManyAndReturn
+   */
+  export type RunUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * The data used to update Runs.
+     */
+    data: XOR<RunUpdateManyMutationInput, RunUncheckedUpdateManyInput>
+    /**
+     * Filter which Runs to update
+     */
+    where?: RunWhereInput
+    /**
+     * Limit how many Runs to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Run upsert
+   */
+  export type RunUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Run to update in case it exists.
+     */
+    where: RunWhereUniqueInput
+    /**
+     * In case the Run found by the `where` argument doesn't exist, create a new Run with this data.
+     */
+    create: XOR<RunCreateInput, RunUncheckedCreateInput>
+    /**
+     * In case the Run was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<RunUpdateInput, RunUncheckedUpdateInput>
+  }
+
+  /**
+   * Run delete
+   */
+  export type RunDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunInclude<ExtArgs> | null
+    /**
+     * Filter which Run to delete.
+     */
+    where: RunWhereUniqueInput
+  }
+
+  /**
+   * Run deleteMany
+   */
+  export type RunDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Runs to delete
+     */
+    where?: RunWhereInput
+    /**
+     * Limit how many Runs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Run without action
+   */
+  export type RunDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Run
+     */
+    select?: RunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Run
+     */
+    omit?: RunOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RunInclude<ExtArgs> | null
   }
 
 
@@ -1981,6 +3284,20 @@ export namespace Prisma {
   };
 
   export type BuildScalarFieldEnum = (typeof BuildScalarFieldEnum)[keyof typeof BuildScalarFieldEnum]
+
+
+  export const RunScalarFieldEnum: {
+    id: 'id',
+    buildId: 'buildId',
+    targetUrls: 'targetUrls',
+    status: 'status',
+    resultJson: 'resultJson',
+    error: 'error',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type RunScalarFieldEnum = (typeof RunScalarFieldEnum)[keyof typeof RunScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -2086,6 +3403,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'RunStatus'
+   */
+  export type EnumRunStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RunStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'RunStatus[]'
+   */
+  export type ListEnumRunStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RunStatus[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Int'
    */
   export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -2117,6 +3448,7 @@ export namespace Prisma {
     finalConfigurationJson?: JsonNullableFilter<"Build">
     createdAt?: DateTimeFilter<"Build"> | Date | string
     updatedAt?: DateTimeFilter<"Build"> | Date | string
+    runs?: RunListRelationFilter
   }
 
   export type BuildOrderByWithRelationInput = {
@@ -2131,6 +3463,7 @@ export namespace Prisma {
     finalConfigurationJson?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    runs?: RunOrderByRelationAggregateInput
   }
 
   export type BuildWhereUniqueInput = Prisma.AtLeast<{
@@ -2148,6 +3481,7 @@ export namespace Prisma {
     finalConfigurationJson?: JsonNullableFilter<"Build">
     createdAt?: DateTimeFilter<"Build"> | Date | string
     updatedAt?: DateTimeFilter<"Build"> | Date | string
+    runs?: RunListRelationFilter
   }, "id">
 
   export type BuildOrderByWithAggregationInput = {
@@ -2184,6 +3518,76 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"Build"> | Date | string
   }
 
+  export type RunWhereInput = {
+    AND?: RunWhereInput | RunWhereInput[]
+    OR?: RunWhereInput[]
+    NOT?: RunWhereInput | RunWhereInput[]
+    id?: StringFilter<"Run"> | string
+    buildId?: StringFilter<"Run"> | string
+    targetUrls?: StringFilter<"Run"> | string
+    status?: EnumRunStatusFilter<"Run"> | $Enums.RunStatus
+    resultJson?: JsonNullableFilter<"Run">
+    error?: StringNullableFilter<"Run"> | string | null
+    createdAt?: DateTimeFilter<"Run"> | Date | string
+    updatedAt?: DateTimeFilter<"Run"> | Date | string
+    build?: XOR<BuildScalarRelationFilter, BuildWhereInput>
+  }
+
+  export type RunOrderByWithRelationInput = {
+    id?: SortOrder
+    buildId?: SortOrder
+    targetUrls?: SortOrder
+    status?: SortOrder
+    resultJson?: SortOrderInput | SortOrder
+    error?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    build?: BuildOrderByWithRelationInput
+  }
+
+  export type RunWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: RunWhereInput | RunWhereInput[]
+    OR?: RunWhereInput[]
+    NOT?: RunWhereInput | RunWhereInput[]
+    buildId?: StringFilter<"Run"> | string
+    targetUrls?: StringFilter<"Run"> | string
+    status?: EnumRunStatusFilter<"Run"> | $Enums.RunStatus
+    resultJson?: JsonNullableFilter<"Run">
+    error?: StringNullableFilter<"Run"> | string | null
+    createdAt?: DateTimeFilter<"Run"> | Date | string
+    updatedAt?: DateTimeFilter<"Run"> | Date | string
+    build?: XOR<BuildScalarRelationFilter, BuildWhereInput>
+  }, "id">
+
+  export type RunOrderByWithAggregationInput = {
+    id?: SortOrder
+    buildId?: SortOrder
+    targetUrls?: SortOrder
+    status?: SortOrder
+    resultJson?: SortOrderInput | SortOrder
+    error?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: RunCountOrderByAggregateInput
+    _max?: RunMaxOrderByAggregateInput
+    _min?: RunMinOrderByAggregateInput
+  }
+
+  export type RunScalarWhereWithAggregatesInput = {
+    AND?: RunScalarWhereWithAggregatesInput | RunScalarWhereWithAggregatesInput[]
+    OR?: RunScalarWhereWithAggregatesInput[]
+    NOT?: RunScalarWhereWithAggregatesInput | RunScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Run"> | string
+    buildId?: StringWithAggregatesFilter<"Run"> | string
+    targetUrls?: StringWithAggregatesFilter<"Run"> | string
+    status?: EnumRunStatusWithAggregatesFilter<"Run"> | $Enums.RunStatus
+    resultJson?: JsonNullableWithAggregatesFilter<"Run">
+    error?: StringNullableWithAggregatesFilter<"Run"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"Run"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Run"> | Date | string
+  }
+
   export type BuildCreateInput = {
     id?: string
     userId?: string | null
@@ -2196,6 +3600,7 @@ export namespace Prisma {
     finalConfigurationJson?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
+    runs?: RunCreateNestedManyWithoutBuildInput
   }
 
   export type BuildUncheckedCreateInput = {
@@ -2210,6 +3615,7 @@ export namespace Prisma {
     finalConfigurationJson?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
+    runs?: RunUncheckedCreateNestedManyWithoutBuildInput
   }
 
   export type BuildUpdateInput = {
@@ -2224,6 +3630,7 @@ export namespace Prisma {
     finalConfigurationJson?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    runs?: RunUpdateManyWithoutBuildNestedInput
   }
 
   export type BuildUncheckedUpdateInput = {
@@ -2238,6 +3645,7 @@ export namespace Prisma {
     finalConfigurationJson?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    runs?: RunUncheckedUpdateManyWithoutBuildNestedInput
   }
 
   export type BuildCreateManyInput = {
@@ -2278,6 +3686,82 @@ export namespace Prisma {
     initialPackageJson?: NullableJsonNullValueInput | InputJsonValue
     sampleResultsJson?: NullableJsonNullValueInput | InputJsonValue
     finalConfigurationJson?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RunCreateInput = {
+    id?: string
+    targetUrls: string
+    status?: $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    build: BuildCreateNestedOneWithoutRunsInput
+  }
+
+  export type RunUncheckedCreateInput = {
+    id?: string
+    buildId: string
+    targetUrls: string
+    status?: $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type RunUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    targetUrls?: StringFieldUpdateOperationsInput | string
+    status?: EnumRunStatusFieldUpdateOperationsInput | $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    build?: BuildUpdateOneRequiredWithoutRunsNestedInput
+  }
+
+  export type RunUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    buildId?: StringFieldUpdateOperationsInput | string
+    targetUrls?: StringFieldUpdateOperationsInput | string
+    status?: EnumRunStatusFieldUpdateOperationsInput | $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RunCreateManyInput = {
+    id?: string
+    buildId: string
+    targetUrls: string
+    status?: $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type RunUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    targetUrls?: StringFieldUpdateOperationsInput | string
+    status?: EnumRunStatusFieldUpdateOperationsInput | $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RunUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    buildId?: StringFieldUpdateOperationsInput | string
+    targetUrls?: StringFieldUpdateOperationsInput | string
+    status?: EnumRunStatusFieldUpdateOperationsInput | $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -2353,9 +3837,19 @@ export namespace Prisma {
     not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
+  export type RunListRelationFilter = {
+    every?: RunWhereInput
+    some?: RunWhereInput
+    none?: RunWhereInput
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
+  }
+
+  export type RunOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type BuildCountOrderByAggregateInput = {
@@ -2480,6 +3974,73 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type EnumRunStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.RunStatus | EnumRunStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.RunStatus[] | ListEnumRunStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RunStatus[] | ListEnumRunStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumRunStatusFilter<$PrismaModel> | $Enums.RunStatus
+  }
+
+  export type BuildScalarRelationFilter = {
+    is?: BuildWhereInput
+    isNot?: BuildWhereInput
+  }
+
+  export type RunCountOrderByAggregateInput = {
+    id?: SortOrder
+    buildId?: SortOrder
+    targetUrls?: SortOrder
+    status?: SortOrder
+    resultJson?: SortOrder
+    error?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type RunMaxOrderByAggregateInput = {
+    id?: SortOrder
+    buildId?: SortOrder
+    targetUrls?: SortOrder
+    status?: SortOrder
+    error?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type RunMinOrderByAggregateInput = {
+    id?: SortOrder
+    buildId?: SortOrder
+    targetUrls?: SortOrder
+    status?: SortOrder
+    error?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type EnumRunStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.RunStatus | EnumRunStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.RunStatus[] | ListEnumRunStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RunStatus[] | ListEnumRunStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumRunStatusWithAggregatesFilter<$PrismaModel> | $Enums.RunStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRunStatusFilter<$PrismaModel>
+    _max?: NestedEnumRunStatusFilter<$PrismaModel>
+  }
+
+  export type RunCreateNestedManyWithoutBuildInput = {
+    create?: XOR<RunCreateWithoutBuildInput, RunUncheckedCreateWithoutBuildInput> | RunCreateWithoutBuildInput[] | RunUncheckedCreateWithoutBuildInput[]
+    connectOrCreate?: RunCreateOrConnectWithoutBuildInput | RunCreateOrConnectWithoutBuildInput[]
+    createMany?: RunCreateManyBuildInputEnvelope
+    connect?: RunWhereUniqueInput | RunWhereUniqueInput[]
+  }
+
+  export type RunUncheckedCreateNestedManyWithoutBuildInput = {
+    create?: XOR<RunCreateWithoutBuildInput, RunUncheckedCreateWithoutBuildInput> | RunCreateWithoutBuildInput[] | RunUncheckedCreateWithoutBuildInput[]
+    connectOrCreate?: RunCreateOrConnectWithoutBuildInput | RunCreateOrConnectWithoutBuildInput[]
+    createMany?: RunCreateManyBuildInputEnvelope
+    connect?: RunWhereUniqueInput | RunWhereUniqueInput[]
+  }
+
   export type StringFieldUpdateOperationsInput = {
     set?: string
   }
@@ -2494,6 +4055,52 @@ export namespace Prisma {
 
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
+  }
+
+  export type RunUpdateManyWithoutBuildNestedInput = {
+    create?: XOR<RunCreateWithoutBuildInput, RunUncheckedCreateWithoutBuildInput> | RunCreateWithoutBuildInput[] | RunUncheckedCreateWithoutBuildInput[]
+    connectOrCreate?: RunCreateOrConnectWithoutBuildInput | RunCreateOrConnectWithoutBuildInput[]
+    upsert?: RunUpsertWithWhereUniqueWithoutBuildInput | RunUpsertWithWhereUniqueWithoutBuildInput[]
+    createMany?: RunCreateManyBuildInputEnvelope
+    set?: RunWhereUniqueInput | RunWhereUniqueInput[]
+    disconnect?: RunWhereUniqueInput | RunWhereUniqueInput[]
+    delete?: RunWhereUniqueInput | RunWhereUniqueInput[]
+    connect?: RunWhereUniqueInput | RunWhereUniqueInput[]
+    update?: RunUpdateWithWhereUniqueWithoutBuildInput | RunUpdateWithWhereUniqueWithoutBuildInput[]
+    updateMany?: RunUpdateManyWithWhereWithoutBuildInput | RunUpdateManyWithWhereWithoutBuildInput[]
+    deleteMany?: RunScalarWhereInput | RunScalarWhereInput[]
+  }
+
+  export type RunUncheckedUpdateManyWithoutBuildNestedInput = {
+    create?: XOR<RunCreateWithoutBuildInput, RunUncheckedCreateWithoutBuildInput> | RunCreateWithoutBuildInput[] | RunUncheckedCreateWithoutBuildInput[]
+    connectOrCreate?: RunCreateOrConnectWithoutBuildInput | RunCreateOrConnectWithoutBuildInput[]
+    upsert?: RunUpsertWithWhereUniqueWithoutBuildInput | RunUpsertWithWhereUniqueWithoutBuildInput[]
+    createMany?: RunCreateManyBuildInputEnvelope
+    set?: RunWhereUniqueInput | RunWhereUniqueInput[]
+    disconnect?: RunWhereUniqueInput | RunWhereUniqueInput[]
+    delete?: RunWhereUniqueInput | RunWhereUniqueInput[]
+    connect?: RunWhereUniqueInput | RunWhereUniqueInput[]
+    update?: RunUpdateWithWhereUniqueWithoutBuildInput | RunUpdateWithWhereUniqueWithoutBuildInput[]
+    updateMany?: RunUpdateManyWithWhereWithoutBuildInput | RunUpdateManyWithWhereWithoutBuildInput[]
+    deleteMany?: RunScalarWhereInput | RunScalarWhereInput[]
+  }
+
+  export type BuildCreateNestedOneWithoutRunsInput = {
+    create?: XOR<BuildCreateWithoutRunsInput, BuildUncheckedCreateWithoutRunsInput>
+    connectOrCreate?: BuildCreateOrConnectWithoutRunsInput
+    connect?: BuildWhereUniqueInput
+  }
+
+  export type EnumRunStatusFieldUpdateOperationsInput = {
+    set?: $Enums.RunStatus
+  }
+
+  export type BuildUpdateOneRequiredWithoutRunsNestedInput = {
+    create?: XOR<BuildCreateWithoutRunsInput, BuildUncheckedCreateWithoutRunsInput>
+    connectOrCreate?: BuildCreateOrConnectWithoutRunsInput
+    upsert?: BuildUpsertWithoutRunsInput
+    connect?: BuildWhereUniqueInput
+    update?: XOR<XOR<BuildUpdateToOneWithWhereWithoutRunsInput, BuildUpdateWithoutRunsInput>, BuildUncheckedUpdateWithoutRunsInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -2643,6 +4250,195 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type NestedEnumRunStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.RunStatus | EnumRunStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.RunStatus[] | ListEnumRunStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RunStatus[] | ListEnumRunStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumRunStatusFilter<$PrismaModel> | $Enums.RunStatus
+  }
+
+  export type NestedEnumRunStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.RunStatus | EnumRunStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.RunStatus[] | ListEnumRunStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RunStatus[] | ListEnumRunStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumRunStatusWithAggregatesFilter<$PrismaModel> | $Enums.RunStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRunStatusFilter<$PrismaModel>
+    _max?: NestedEnumRunStatusFilter<$PrismaModel>
+  }
+
+  export type RunCreateWithoutBuildInput = {
+    id?: string
+    targetUrls: string
+    status?: $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type RunUncheckedCreateWithoutBuildInput = {
+    id?: string
+    targetUrls: string
+    status?: $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type RunCreateOrConnectWithoutBuildInput = {
+    where: RunWhereUniqueInput
+    create: XOR<RunCreateWithoutBuildInput, RunUncheckedCreateWithoutBuildInput>
+  }
+
+  export type RunCreateManyBuildInputEnvelope = {
+    data: RunCreateManyBuildInput | RunCreateManyBuildInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type RunUpsertWithWhereUniqueWithoutBuildInput = {
+    where: RunWhereUniqueInput
+    update: XOR<RunUpdateWithoutBuildInput, RunUncheckedUpdateWithoutBuildInput>
+    create: XOR<RunCreateWithoutBuildInput, RunUncheckedCreateWithoutBuildInput>
+  }
+
+  export type RunUpdateWithWhereUniqueWithoutBuildInput = {
+    where: RunWhereUniqueInput
+    data: XOR<RunUpdateWithoutBuildInput, RunUncheckedUpdateWithoutBuildInput>
+  }
+
+  export type RunUpdateManyWithWhereWithoutBuildInput = {
+    where: RunScalarWhereInput
+    data: XOR<RunUpdateManyMutationInput, RunUncheckedUpdateManyWithoutBuildInput>
+  }
+
+  export type RunScalarWhereInput = {
+    AND?: RunScalarWhereInput | RunScalarWhereInput[]
+    OR?: RunScalarWhereInput[]
+    NOT?: RunScalarWhereInput | RunScalarWhereInput[]
+    id?: StringFilter<"Run"> | string
+    buildId?: StringFilter<"Run"> | string
+    targetUrls?: StringFilter<"Run"> | string
+    status?: EnumRunStatusFilter<"Run"> | $Enums.RunStatus
+    resultJson?: JsonNullableFilter<"Run">
+    error?: StringNullableFilter<"Run"> | string | null
+    createdAt?: DateTimeFilter<"Run"> | Date | string
+    updatedAt?: DateTimeFilter<"Run"> | Date | string
+  }
+
+  export type BuildCreateWithoutRunsInput = {
+    id?: string
+    userId?: string | null
+    targetUrls: string
+    userObjective: string
+    status?: $Enums.BuildStatus
+    error?: string | null
+    initialPackageJson?: NullableJsonNullValueInput | InputJsonValue
+    sampleResultsJson?: NullableJsonNullValueInput | InputJsonValue
+    finalConfigurationJson?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type BuildUncheckedCreateWithoutRunsInput = {
+    id?: string
+    userId?: string | null
+    targetUrls: string
+    userObjective: string
+    status?: $Enums.BuildStatus
+    error?: string | null
+    initialPackageJson?: NullableJsonNullValueInput | InputJsonValue
+    sampleResultsJson?: NullableJsonNullValueInput | InputJsonValue
+    finalConfigurationJson?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type BuildCreateOrConnectWithoutRunsInput = {
+    where: BuildWhereUniqueInput
+    create: XOR<BuildCreateWithoutRunsInput, BuildUncheckedCreateWithoutRunsInput>
+  }
+
+  export type BuildUpsertWithoutRunsInput = {
+    update: XOR<BuildUpdateWithoutRunsInput, BuildUncheckedUpdateWithoutRunsInput>
+    create: XOR<BuildCreateWithoutRunsInput, BuildUncheckedCreateWithoutRunsInput>
+    where?: BuildWhereInput
+  }
+
+  export type BuildUpdateToOneWithWhereWithoutRunsInput = {
+    where?: BuildWhereInput
+    data: XOR<BuildUpdateWithoutRunsInput, BuildUncheckedUpdateWithoutRunsInput>
+  }
+
+  export type BuildUpdateWithoutRunsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    targetUrls?: StringFieldUpdateOperationsInput | string
+    userObjective?: StringFieldUpdateOperationsInput | string
+    status?: EnumBuildStatusFieldUpdateOperationsInput | $Enums.BuildStatus
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    initialPackageJson?: NullableJsonNullValueInput | InputJsonValue
+    sampleResultsJson?: NullableJsonNullValueInput | InputJsonValue
+    finalConfigurationJson?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type BuildUncheckedUpdateWithoutRunsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    targetUrls?: StringFieldUpdateOperationsInput | string
+    userObjective?: StringFieldUpdateOperationsInput | string
+    status?: EnumBuildStatusFieldUpdateOperationsInput | $Enums.BuildStatus
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    initialPackageJson?: NullableJsonNullValueInput | InputJsonValue
+    sampleResultsJson?: NullableJsonNullValueInput | InputJsonValue
+    finalConfigurationJson?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RunCreateManyBuildInput = {
+    id?: string
+    targetUrls: string
+    status?: $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type RunUpdateWithoutBuildInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    targetUrls?: StringFieldUpdateOperationsInput | string
+    status?: EnumRunStatusFieldUpdateOperationsInput | $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RunUncheckedUpdateWithoutBuildInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    targetUrls?: StringFieldUpdateOperationsInput | string
+    status?: EnumRunStatusFieldUpdateOperationsInput | $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RunUncheckedUpdateManyWithoutBuildInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    targetUrls?: StringFieldUpdateOperationsInput | string
+    status?: EnumRunStatusFieldUpdateOperationsInput | $Enums.RunStatus
+    resultJson?: NullableJsonNullValueInput | InputJsonValue
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 

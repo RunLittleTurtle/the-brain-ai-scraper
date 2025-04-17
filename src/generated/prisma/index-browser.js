@@ -131,6 +131,17 @@ exports.Prisma.BuildScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.RunScalarFieldEnum = {
+  id: 'id',
+  buildId: 'buildId',
+  targetUrls: 'targetUrls',
+  status: 'status',
+  resultJson: 'resultJson',
+  error: 'error',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -166,8 +177,16 @@ exports.BuildStatus = exports.$Enums.BuildStatus = {
   PROCESSING_FEEDBACK: 'PROCESSING_FEEDBACK'
 };
 
+exports.RunStatus = exports.$Enums.RunStatus = {
+  PENDING: 'PENDING',
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+};
+
 exports.Prisma.ModelName = {
-  Build: 'Build'
+  Build: 'Build',
+  Run: 'Run'
 };
 
 /**

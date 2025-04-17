@@ -1,4 +1,4 @@
-import Fastify, { FastifyInstance as BaseFastifyInstance, FastifyServerOptions } from 'fastify'; // Import Fastify constructor AND Base Instance AND ServerOptions
+import Fastify, { FastifyInstance as BaseFastifyInstance, FastifyServerOptions, FastifyError } from 'fastify'; // Import Fastify constructor AND Base Instance AND ServerOptions
 import type { FastifyInstance, FastifyRequest, FastifyReply } from './types/fastify.js'; // Import our augmented types
 import dbPlugin from './plugins/db.plugin.js';
 import sensible from '@fastify/sensible'; // Import @fastify/sensible
@@ -20,13 +20,18 @@ interface BuildAppOptions {
 }
 
 export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInstance> {
-  const app = Fastify({ // Use imported Fastify constructor
-    logger: opts.logger !== undefined ? opts.logger : { // Use logger from opts if provided, otherwise default
+  const app = Fastify({
+    logger: opts.logger !== undefined ? opts.logger : {
       level: opts.logLevel || LOG_LEVEL,
       transport: {
         target: 'pino-pretty',
       },
     },
+    ajv: {
+      customOptions: {
+        allErrors: true
+      }
+    }
   });
 
   // Check for API Key at startup
@@ -34,6 +39,9 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
     app.log.error('API_KEY environment variable is not set. Application cannot start securely.');
     process.exit(1); // Exit if API key is missing
   }
+
+  // Decorate Fastify with config object for API key access in hooks
+  app.decorate('config', { apiKey: opts.apiKey || API_KEY });
 
   // Register essential plugins
   await app.register(dbPlugin); // Register DB plugin
@@ -86,14 +94,38 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
         headers: request.headers
       }
     });
-    // Fastify validation error
+    // Debug log to confirm error handler is called
+    app.log.warn('IN ERROR HANDLER', { errorName: error.name, hasValidation: !!error.validation, statusCode: error.statusCode });
+
+    // Handle validation errors (rely only on standard error.validation)
     if (error.validation) {
-      reply.status(400).send({ message: 'Validation failed', errors: error.validation });
-    } else if (error.statusCode === 404) {
-      reply.status(404).send({ message: error.message || 'Resource not found' }); // Use error message if available
-    } else {
-      reply.status(error.statusCode || 500).send({ message: error.message || 'Internal server error' }); // Use status code/message
+      // Ensure validation errors are properly formatted as an array
+      const formattedErrors = Array.isArray(error.validation) ? error.validation : [];
+      reply.status(400).send({
+        run_id: '', // No specific run_id available here
+        message: 'Validation failed', // Generic message
+        errors: formattedErrors // Use the standard validation errors array
+      });
+      return;
     }
+
+    // Handle other 400 errors (that are not validation errors)
+    if (error.statusCode === 400) {
+      reply.status(400).send({
+        run_id: (error as any).run_id || '', // Try to get run_id if attached by other code
+        message: typeof error.message === 'string' ? error.message : 'Bad request',
+        errors: [] // No validation errors here, send empty array
+      });
+      return;
+    }
+
+    // Handle other errors (e.g., 500)
+    if (error.statusCode === 404) {
+      reply.status(404).send({ message: error.message || 'Resource not found' }); // Use error message if available
+      return;
+    }
+    // Default
+    reply.status(error.statusCode || 500).send({ message: error.message || 'Internal server error' });
   });
 
   // Cast to unknown first, then to custom FastifyInstance (with mcpService). This is safe after all plugins registered.

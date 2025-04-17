@@ -9,7 +9,10 @@ export async function apiKeyAuth(
     request: FastifyRequest,
     reply: FastifyReply
 ) : Promise<void> {
-    const apiKey = process.env.API_KEY;
+    // Prefer apiKey from fastify instance config, fallback to env
+    const fastify = request.server;
+    // @ts-ignore
+    const apiKey = fastify.config?.apiKey || process.env.API_KEY;
 
     // Check if API_KEY is configured in the environment
     if (!apiKey) {
