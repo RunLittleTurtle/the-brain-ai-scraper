@@ -16,7 +16,7 @@ C4Context
  System_Boundary(the_brain, "The Brain API") {
  Container(api_gateway, "API Gateway", "Exposes REST endpoints for builds, runs, tools, and admin functions.")
  Container(analysis_service, "Analysis Service", "LLM-driven analysis of objectives and URLs, produces config packages.")
- Container(tool_orchestrator, "Tool Orchestrator", "Handles tool selection and invocation via classic, MCP, or both (A/B testing). Uses MCP protocol internally.")
+ Container(tool_orchestrator, "Tool Orchestrator", "Handles tool selection and invocation via classic, MCP, or dual (A/B testing). Uses MCP protocol internally.")
  Container(execution_engine, "Execution Engine", "Executes scraping runs using selected tools from the Toolbox. Handles run progress, cancellation, and reporting.")
  Container(knowledge_base, "Knowledge Base", "Stores successful config packages, embeddings, and platform fingerprints for reuse.")
  Container(abtest_analytics, "A/B Test Analytics", "Records and analyzes tool performance, orchestration outcomes, and MCP logs.")

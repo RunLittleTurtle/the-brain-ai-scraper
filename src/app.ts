@@ -5,6 +5,8 @@ import sensible from '@fastify/sensible'; // Import @fastify/sensible
 import buildsController from './modules/builds/builds.controller.js'; // Use default import
 import runsController from './modules/runs/runs.controller.js'; // Register runs endpoint
 import mcpPlugin from './mcp-server/mcp.plugin.js'; // Import MCP Plugin
+import errorsModule from './modules/errors/errors.module.js'; // Import errors module
+import scrapesModule from './modules/scrapes/scrapes.module.js'; // Import scrapes module
 import { apiKeyAuth } from './hooks/apiKeyAuth.js'; // Import hook
 import dependenciesPlugin from './plugins/dependencies.plugin.js'; // Ensure .js
 
@@ -12,11 +14,15 @@ import dependenciesPlugin from './plugins/dependencies.plugin.js'; // Ensure .js
 const API_KEY = process.env.API_KEY;
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 
+// Import PrismaClient type for the options interface
+import { PrismaClient } from './generated/prisma/index.js';
+
 // Type definition for buildApp options (optional but good practice)
 interface BuildAppOptions {
   apiKey?: string;
   logLevel?: string;
   logger?: FastifyServerOptions['logger'] | boolean; // Add logger option
+  prisma?: PrismaClient; // Add option to pass a Prisma client for testing
 }
 
 export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInstance> {
@@ -44,7 +50,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   app.decorate('config', { apiKey: opts.apiKey || API_KEY });
 
   // Register essential plugins
-  await app.register(dbPlugin); // Register DB plugin
+  await app.register(dbPlugin, { prisma: opts.prisma }); // Register DB plugin with optional prisma client
   await app.register(sensible); // Register @fastify/sensible
   await app.register(dependenciesPlugin); // Register custom dependencies
 
@@ -58,6 +64,8 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
     await instance.register(buildsController, { prefix: '/builds' });
     await instance.register(runsController, { prefix: '/runs' }); // Register new runs endpoint
     await instance.register(mcpPlugin, { prefix: '/mcp' }); // Register MCP service routes
+    await instance.register(errorsModule); // Register error reporting module
+    await instance.register(scrapesModule); // Register scrapes module
   });
 
   // Health check endpoint (does not require auth)

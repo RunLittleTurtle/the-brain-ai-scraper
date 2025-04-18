@@ -4,6 +4,8 @@ process.env.MCP_SSE_URL = process.env.MCP_SSE_URL || 'http://dummy-mcp-sse-url';
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { buildApp } from '../../../src/app.js';
 import { Type } from '@sinclair/typebox';
+import { PrismaClient, BuildStatus } from '../../../src/generated/prisma/index.js';
+import { createMockPrismaClient } from '../../utils/test-db-helper.js';
 
 // Using a unique UUID for this test to avoid conflicts with other tests
 const TEST_BUILD_ID = '123e4567-e89b-12d3-a456-426614174999';
@@ -13,8 +15,31 @@ describe('POST /runs', () => {
   let prisma;
   
   beforeAll(async () => {
-    // Build the app with test configuration
-    app = await buildApp({ apiKey: 'test-key', logger: false });
+    // Initialize mock Prisma client
+    prisma = createMockPrismaClient() as unknown as PrismaClient;
+    
+    // Setup mock build.findUnique to return our test build
+    prisma.build.findUnique = vi.fn().mockImplementation(({ where }) => {
+      if (where.id === TEST_BUILD_ID) {
+        return {
+          id: TEST_BUILD_ID,
+          userObjective: 'Test objective for runs controller test',
+          targetUrls: JSON.stringify(['https://example.com']),
+          status: BuildStatus.CONFIRMED,
+          userId: 'test-user',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      }
+      return null;
+    });
+    
+    // Build the app with test configuration and inject our mock Prisma client
+    app = await buildApp({ 
+      apiKey: 'test-key', 
+      logger: false,
+      prisma // Pass our mock Prisma client
+    });
     
     // Set up auth for testing
     app.decorateRequest('user', null);
@@ -22,50 +47,32 @@ describe('POST /runs', () => {
       req.user = { id: 'test-user' };
       done();
     });
-    
-    // Import and initialize PrismaClient
-    const { PrismaClient } = await import('../../../src/generated/prisma/index.js');
-    prisma = new PrismaClient();
   });
 
   afterAll(async () => {
     // Clean up and close connections
     if (app) await app.close();
-    if (prisma) await prisma.$disconnect();
   });
 
-  beforeEach(async () => {
-    // Clean up any data from previous test runs
-    await prisma.run.deleteMany({ where: { buildId: TEST_BUILD_ID } });
-    await prisma.build.deleteMany({ where: { id: TEST_BUILD_ID } });
+  beforeEach(() => {
+    // Reset all mocks before each test
+    vi.clearAllMocks();
     
-    // Create a test build with all required fields
-    const build = await prisma.build.create({
-      data: {
-        id: TEST_BUILD_ID,
-        userObjective: 'Test objective for runs controller test',
-        targetUrls: JSON.stringify(['https://example.com']),
-        status: 'CONFIRMED',
-        userId: 'test-user',
-        finalConfigurationJson: JSON.stringify({
-          scraper: { 
-            tool_id: 'scraper:dummy', 
-            parameters: { selectors: { title: 'h1' } } 
-          }
-        })
+    // Set up the mock build to be returned
+    prisma.build.findUnique = vi.fn().mockImplementation(({ where }) => {
+      if (where.id === TEST_BUILD_ID) {
+        return {
+          id: TEST_BUILD_ID,
+          userObjective: 'Test objective for runs controller test',
+          targetUrls: JSON.stringify(['https://example.com']),
+          status: BuildStatus.CONFIRMED,
+          userId: 'test-user',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
       }
+      return null;
     });
-    
-    // Verify the build was created
-    if (!build || build.id !== TEST_BUILD_ID) {
-      throw new Error(`Failed to create test build: ${TEST_BUILD_ID}`);
-    }
-  });
-
-  afterEach(async () => {
-    // Clean up after each test
-    await prisma.run.deleteMany({ where: { buildId: TEST_BUILD_ID } });
-    await prisma.build.deleteMany({ where: { id: TEST_BUILD_ID } });
   });
 
   it.todo('returns 200 and a run_id for valid input', async () => {

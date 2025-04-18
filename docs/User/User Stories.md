@@ -329,3 +329,42 @@ Okay, let's craft a user story specifically for "The Brain" feature where it lea
   - The knowledge base query must be fast enough not to introduce unacceptable latency to the overall build start time.
   - The logic for determining similarity (platform, objective, schema) needs careful definition and tuning.
   - Requires the "Save Successful Build" story (the previous one) to be implemented first, as it populates the data source.
+
+# complete User Scraping Flow with The Brain and tool selection and Json## User Flow1. **User Submits Request**  
+  - User: "I want to find information from LinkedIn. I want to find all the job postings and their detailed view for the role of product manager in Montreal."
+
+2. **System Searches Knowledge Base**  
+  - System searches for similar past requests  
+  - Identifies relevant output structures and appropriate tools
+
+3. **System Proposes Approach**  
+  - System: "I'll extract LinkedIn job postings for product managers in Montreal. Here's the JSON output format I'll use and the scraping tools I'll employ."
+  - *[Displays proposed JSON structure and tools]*
+
+4. **User Reviews Proposal**  
+  - User: "Yes, all good"  
+  - OR  
+  - User: "Add this field, I also want to have the description."
+
+5. **System Adjusts (if needed)**  
+  - If changes requested, system updates approach and presents revised plan
+  - System: "I've added the description field to the output structure. Here's the updated plan."
+
+6. **Sample Extraction**  
+  - System performs limited scraping to generate sample results
+  - System: "Here's a sample of the data I've extracted."
+  - *[Displays sample JSON output]*
+
+7. **User Reviews Sample**  
+  - User: "Yes all good"  
+  - OR  
+  - User: "No, you were not able to find the title role, try again."
+
+8. **System Refines (if needed)**  
+  - If issues found, system adjusts scraping approach or tools
+  - System: "I've adjusted the extraction method to properly capture the title role."
+
+9. **Full Extraction**  
+  - System performs complete scraping operation
+  - System: "I've completed the extraction. Here are all product manager job postings in Montreal from LinkedIn."
+  - *[Delivers complete JSON dataset]*

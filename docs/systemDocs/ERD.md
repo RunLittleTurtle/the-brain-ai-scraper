@@ -17,8 +17,9 @@ erDiagram
         json initial_target_urls
         string status
         json temporary_config_package
-        json final_config_package
+        json user_feedback
         json package_results
+        json final_config_package
         text error_message
         datetime created_at
         datetime updated_at

@@ -109,6 +109,14 @@ export class ToolboxService implements IToolbox {
     throw new Error(`Tool ${name} does not support a known MCP method.`);
   }
 
+  /**
+   * Get a self-reference for compatibility with dependency injection
+   * @returns This instance as an IToolbox
+   */
+  getToolbox(): IToolbox {
+    return this;
+  }
+
   registerDefaultTools(): void {
     // Register all MCP-compliant tools
     this.registerTool(new FetchCheerioScraper());

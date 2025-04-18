@@ -1,10 +1,11 @@
 process.env.MCP_RPC_URL = 'http://dummy-mcp-rpc-url';
 process.env.MCP_SSE_URL = 'http://dummy-mcp-sse-url';
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { buildApp } from '../../../src/app.js';
 import { FastifyInstance } from 'fastify';
 import { PrismaClient, BuildStatus, Prisma } from '../../../src/generated/prisma/index.js';
 import { randomUUID } from 'crypto';
+import { createMockPrismaClient } from '../../utils/test-db-helper.js';
 
 const TEST_API_KEY = 'test-api-key-for-get-build';
 process.env.API_KEY = TEST_API_KEY;
@@ -20,6 +21,10 @@ describe('GET /builds/:build_id functionality', () => {
   const confirmedBuildId = randomUUID();
   const corruptedSamplesBuildId = randomUUID();
   const corruptedUrlsBuildId = randomUUID();
+  
+  // Mock build data for responses
+  const mockBuilds = new Map();
+  
   const sampleResults = {
     urls: [
       {
@@ -49,29 +54,43 @@ describe('GET /builds/:build_id functionality', () => {
   };
 
   beforeAll(async () => {
-    // Configure API key for auth
-    process.env.API_KEY = TEST_API_KEY;
+    // Initialize mock Prisma client
+    prisma = createMockPrismaClient() as unknown as PrismaClient;
     
-    // Build app (this will set up the built-in authentication)
-    app = await buildApp({ logger: false, apiKey: TEST_API_KEY });
-    await app.ready();
+    // Setup mock behavior
+    prisma.build.findUnique = vi.fn().mockImplementation(({ where }) => {
+      // Return the mocked build if it exists
+      return mockBuilds.get(where.id) || null;
+    });
     
-    // Get prisma instance from the app
-    prisma = app.prisma;
+    prisma.build.create = vi.fn().mockImplementation(({ data }) => {
+      const build = {
+        ...data,
+        id: data.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockBuilds.set(data.id, build);
+      return build;
+    });
+    
+    // Initialize app with test API key and inject our mock Prisma client
+    app = await buildApp({ 
+      apiKey: TEST_API_KEY, 
+      logger: false,
+      prisma // Explicitly pass our mock Prisma client to the app
+    });
   });
 
   afterAll(async () => {
-    await prisma.$disconnect();
+    // Close the Fastify app
     await app.close();
   });
 
-  beforeEach(async () => {
-    // Clean up any existing test data
-    await prisma.build.deleteMany({
-      where: {
-        userId: testUserId
-      }
-    });
+  beforeEach(() => {
+    // Clear mock builds before each test
+    mockBuilds.clear();
+    vi.clearAllMocks();
   });
 
   it('should return the correct build status for a valid build', async () => {
@@ -150,7 +169,7 @@ describe('GET /builds/:build_id functionality', () => {
         userId: testUserId,
         status: BuildStatus.CONFIRMED,
         sampleResultsJson: JSON.stringify(sampleResults), // Even though it has results
-        finalConfigurationJson: JSON.stringify(tempConfig)
+        finalPackageJson: JSON.stringify(tempConfig)
       }
     });
 
@@ -182,6 +201,7 @@ describe('GET /builds/:build_id functionality', () => {
         userId: testUserId,
         status: BuildStatus.PENDING_USER_FEEDBACK,
         sampleResultsJson: '{invalid-json: this should cause an error}' // Invalid JSON
+        // Test database doesn't have the updated schema
       }
     });
 
@@ -211,9 +231,10 @@ describe('GET /builds/:build_id functionality', () => {
       data: {
         id: corruptedUrlsBuildId, // Use our UUID
         userObjective: 'Test objective',
-        targetUrls: '{not-valid-json}', // Invalid JSON
+        targetUrls: '{invalid-json: this should cause an error}', // Invalid JSON
         userId: testUserId,
-        status: BuildStatus.PENDING_ANALYSIS
+        status: BuildStatus.PENDING_ANALYSIS,
+        // Test database doesn't have the updated schema
       }
     });
 

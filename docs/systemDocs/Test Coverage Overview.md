@@ -1,3 +1,76 @@
+## Database Testing Architecture & Best Practices
+
+To maintain reliable and consistent tests, The Brain AI Scraper uses a dedicated test database separate from the production database. This section outlines the architecture and patterns for database testing.
+
+### Database Configuration
+
+- **Production Database**: `brain-db` container at `postgresql://postgres:password@localhost:5432/mydb`
+- **Test Database**: `brain-db-test` container at `postgresql://postgres:postgres@brain-db-test:5432/postgres`
+
+### Test Utilities
+
+A set of database testing utilities is available in `/app/tests/utils/test-db-helper.js`. These utilities provide consistent patterns for setting up test databases, cleaning up after tests, and mocking database operations when needed.
+
+### Testing Patterns
+
+**For integration tests that need a real database:**
+```typescript
+import { 
+  createTestPrismaClient,
+  cleanupTestDatabase, 
+  disconnectTestDatabase 
+} from '../../utils/test-db-helper.js';
+
+describe('Your test suite', () => {
+  let prisma;
+  
+  beforeEach(async () => {
+    // Initialize with test database
+    prisma = createTestPrismaClient();
+    // Clean up before test
+    await cleanupTestDatabase(prisma);
+  });
+  
+  afterEach(async () => {
+    // Clean up after test
+    await cleanupTestDatabase(prisma);
+  });
+  
+  afterAll(async () => {
+    // Disconnect when done
+    await disconnectTestDatabase(prisma);
+  });
+});
+```
+
+**For unit tests that should mock the database:**
+```typescript
+import { createMockPrismaClient } from '../../utils/test-db-helper.js';
+
+describe('Your test suite', () => {
+  let prisma;
+  
+  beforeEach(() => {
+    // Create mock database
+    prisma = createMockPrismaClient();
+    // Mock specific responses as needed
+    prisma.build.findUnique.mockResolvedValue({ /* mock data */ });
+  });
+});
+```
+
+### Running Tests with Database Support
+
+To run tests with proper database setup:
+
+```bash
+npm run test:with-db
+```
+
+This command ensures the test database schema is properly set up before running tests.
+
+## Test Coverage Matrix
+
 | # | File & Suite | Test Description | Status | Why this test? |
 |---|--------------|------------------|--------|----------------|
 | 1 | build.processor.test.ts / Build Processor | should have test cases (placeholder) | [PASS] | A temporary placeholder test that will be replaced with detailed tests in a future PR. |

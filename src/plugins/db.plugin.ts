@@ -11,10 +11,16 @@ declare module 'fastify' {
   }
 }
 
+// Define options with a potential prisma client for testing
+interface DbPluginOptions {
+  prisma?: PrismaClient;
+}
+
 // Define the plugin using FastifyPluginAsync type
 // Use the base FastifyInstance for plugins that do not require mcpService
-const dbPlugin: FastifyPluginAsync = async (server: BaseFastifyInstance, options: Record<string, unknown>) => {
-  const prisma = new PrismaClient({
+const dbPlugin: FastifyPluginAsync = async (server: BaseFastifyInstance, options: DbPluginOptions) => {
+  // Allow injection of an existing Prisma client (useful for testing)
+  const prisma = options.prisma || new PrismaClient({
     // Optionally configure logging
     // log: [ { emit: 'event', level: 'query' }, 'info', 'warn', 'error'],
   });

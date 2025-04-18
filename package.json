@@ -10,7 +10,9 @@
     "build:watch": "tsc --watch",
     "start": "node dist/server.js",
     "lint": "eslint src --ext .ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:with-db": "npm run setup:test-db && DATABASE_URL_TEST=postgresql://postgres:postgres@localhost:5432/postgres vitest run",
+    "setup:test-db": "ts-node-esm tests/utils/setup-test-db.ts"
   },
   "keywords": [
     "web scraping",

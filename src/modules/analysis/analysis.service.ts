@@ -1,5 +1,5 @@
 import { IToolbox } from "../../core/interfaces/toolbox.interface.js"; 
-import { AnalysisInput, AnalysisResult } from "./analysis.types.js";
+import { AnalysisInput, AnalysisResult, RefinementInput, RefinementResult } from "./analysis.types.js";
 import { UniversalConfigurationPackageFormatV1 } from "../../core/domain/configuration-package.types.js"; 
 import { BuildStatus } from "../../generated/prisma/index.js"; 
 import { IBuildRepository } from "../../infrastructure/db/build.repository.js";
@@ -153,5 +153,105 @@ export class AnalysisService {
         }
         // Add more checks for schema, parameters etc.
         return { isValid: true };
+    }
+
+    /**
+     * Refines a build configuration package based on user feedback and previous samples.
+     * Supports classic and MCP orchestration modes.
+     * @param input - The refinement input data.
+     * @returns The refined configuration package or error result.
+     */
+    async refineBuildConfiguration(input: RefinementInput): Promise<RefinementResult> {
+        console.log(`[AnalysisService] Starting refinement for build: ${input.buildId}`);
+
+        try {
+            // Update status to reflect processing feedback
+            await this.buildRepository.updateBuildStatus(input.buildId, BuildStatus.PROCESSING_FEEDBACK);
+
+            // Determine orchestration mode
+            const mode = (process.env.TOOL_ORCHESTRATION_MODE as OrchestrationMode) || 'classic';
+            if (mode === 'mcp') {
+                // --- MCP Mode: Use orchestrator for package refinement ---
+                if (!this.orchestrator) {
+                    const msg = '[AnalysisService] MCP mode requested but orchestrator not provided';
+                    console.error(msg);
+                    await this.buildRepository.updateBuildStatus(input.buildId, BuildStatus.FAILED, msg);
+                    return { success: false, error: msg, failureReason: 'llm_error' };
+                }
+
+                const toolInput: ToolCallInput = {
+                    toolName: 'refine_configuration',  // MCP tool for refinement
+                    payload: {
+                        originalObjective: input.originalObjective,
+                        previousPackage: input.previousPackage,
+                        sampleResults: input.sampleResults,
+                        userFeedback: input.userFeedback,
+                        toolHints: input.toolHints
+                    },
+                    context: { buildId: input.buildId }
+                };
+
+                console.log(`[AnalysisService] Calling MCP orchestrator for refinement...`);
+                const result = await this.orchestrator.callTool(toolInput, 'mcp');
+                if (result.error) {
+                    console.error('[AnalysisService] MCP orchestrator error during refinement:', result.error);
+                    await this.buildRepository.updateBuildStatus(input.buildId, BuildStatus.FAILED, `MCP refinement error: ${result.error}`);
+                    return { success: false, error: `MCP refinement error: ${result.error}`, failureReason: 'llm_error' };
+                }
+
+                // Validate MCP output
+                const validation = this.validateGeneratedPackage(result.output);
+                if (!validation.isValid) {
+                    console.error(`[AnalysisService] MCP refinement output failed validation: ${validation.error}`);
+                    await this.buildRepository.updateBuildStatus(input.buildId, BuildStatus.FAILED, `MCP refinement output invalid: ${validation.error}`);
+                    return { success: false, error: `MCP refinement output invalid: ${validation.error}`, failureReason: 'llm_error' };
+                }
+
+                console.log('[AnalysisService] MCP mode: refined package passed validation.');
+                return { success: true, package: result.output };
+            }
+
+            // --- Classic Mode: Use OpenAI service ---
+            console.log('[AnalysisService] Calling OpenAI service to refine package...');
+            const refinedPackage = await this.openaiService.refinePackage(
+                input.originalObjective,
+                input.previousPackage,
+                input.sampleResults,
+                input.userFeedback,
+                input.toolHints
+            );
+
+            if (!refinedPackage) {
+                console.error('[AnalysisService] OpenAI service failed to refine package.');
+                await this.buildRepository.updateBuildStatus(input.buildId, BuildStatus.FAILED, 'LLM refinement failed: Could not generate refined configuration package.');
+                return { success: false, error: 'LLM refinement failed: Could not generate refined configuration package.', failureReason: 'llm_error' };
+            }
+
+            console.log(`[AnalysisService] Received refined package from OpenAI service.`);
+
+            // Validate the refined package
+            const validation = this.validateGeneratedPackage(refinedPackage);
+            if (!validation.isValid) {
+                console.error(`[AnalysisService] Refined package failed validation: ${validation.error}`);
+                await this.buildRepository.updateBuildStatus(input.buildId, BuildStatus.FAILED, `LLM refinement failed: Invalid package structure - ${validation.error}`);
+                return { success: false, error: `LLM refinement failed: Invalid package structure - ${validation.error}`, failureReason: 'llm_error' };
+            }
+
+            console.log('[AnalysisService] Refined package passed validation.');
+            
+            // Log if tool was switched
+            if (input.previousPackage.scraper.tool_id !== refinedPackage.scraper.tool_id) {
+                console.log(`[AnalysisService] Tool switched from ${input.previousPackage.scraper.tool_id} to ${refinedPackage.scraper.tool_id}`);
+            }
+            
+            console.log(`[AnalysisService] Refinement successful for build: ${input.buildId}`);
+            return { success: true, package: refinedPackage };
+
+        } catch (error) {
+            console.error(`[AnalysisService] Unexpected error during refinement for build ${input.buildId}:`, error);
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during refinement.';
+            await this.buildRepository.updateBuildStatus(input.buildId, BuildStatus.FAILED, `LLM refinement failed: ${errorMessage}`);
+            return { success: false, error: `LLM refinement failed: ${errorMessage}`, failureReason: 'unknown' };
+        }
     }
 }

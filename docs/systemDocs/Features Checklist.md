@@ -149,22 +149,79 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
     - Set to processing_feedback, etc.
 
   - **6.5 Error Handling** - [LLM_Test_Complete]
+
+
+### Feature: Error Reporting for Failed Builds - P0 [LLM_Test_Complete]
+- **Sub-Features:**
+  - **1. Enhanced Error Schema** - [LLM_Test_Complete]
+    - Define standardized error schema with category, severity, timestamp, context and metadata.
+  - **2. Repository Update** - [LLM_Test_Complete]
+    - Updated BuildRepository with updateBuildError method to store structured error data as JSON.
+    - Added support for detailed error tracking with categories and severity levels.
+  - **3. Test Integration** - [LLM_Test_Complete]
+    - Updated test infrastructure with enhanced mock Prisma client to handle JSON fields.
+    - Fixed test compatibility issues with structured error reporting.
+    - Implemented regression tests for error handling scenarios.
+
+  - **7.3 Database Schema Updates** - [LLM_Backlog]
+    - Add fields to store detailed error information
+    - Support for multiple errors per build
+
+  - **7.4 Comprehensive Error Logging** - [LLM_Backlog]
+    - Log errors in a structured format for easier analysis
+    - Include context information for debugging
+
+  - **7.5 Error Reporting API Endpoint** - [LLM_Backlog]
+    - Create API endpoint to expose detailed error information
+    - Support filtering and pagination
+
+
+### Feature: Full Scrape Execution Engine - P0 [LLM_In_Progress]
+- **Sub-Features:**
+  - **8.1 Enhanced Execution Engine Core** - [LLM_In_Progress]
+    - Extend current engine to handle full scrapes beyond samples
+    - Implement progress tracking during execution
+  - **8.2 Error Handling & Recovery** - [LLM_In_Progress]
+    - Implement robust error handling during scraping
+    - Create failure recovery mechanisms
+  - **8.3 Execution Management** - [LLM_Backlog]
+    - Add support for cancellation and timeout management
+    - Implement rate limiting and throttling
+  - **8.4 State Management** - [LLM_Backlog]
+    - Ensure proper database state transitions during execution
+    - Track execution progress and store intermediate results
+
+  - **8.2 Progress Tracking** - [LLM_Backlog]
+    - Add real-time progress tracking during execution
+    - Store and expose progress metrics via API
+
+  - **8.3 Robust Error Handling** - [LLM_Backlog]
+    - Implement comprehensive error handling during scraping
+    - Support for partial success scenarios
+
+  - **8.4 Cancellation and Timeout Management** - [LLM_Backlog]
+    - Add support for cancelling running scrapes
+    - Implement intelligent timeout handling
+
+  - **8.5 State Transition Management** - [LLM_Backlog]
+    - Ensure proper database state transitions during execution
+    - Handle edge cases like interrupted scrapes
     - 404, 409, 401/403 handling
 
 
-### Feature: LLM Package Refinement & Tool Switching (Internal Process) - P1 [LLM_To_Do]
+### Feature: LLM Package Refinement & Tool Switching (Internal Process) - P1 [LLM_Test_Complete]
 - **Sub-Features:**
-  - **7.1 Receive & Process User Feedback** - [LLM_To_Do]
+  - **7.1 Receive & Process User Feedback** - [LLM_Test_Complete]
     - Extract actionable insights from feedback
-  - **7.2 Refine Configuration Logic** - [LLM_To_Do]
+  - **7.2 Refine Configuration Logic** - [LLM_Test_Complete]
     - Adjust existing config or select different tools
-  - **7.3 Knowledge Base Integration** - [LLM_To_Do]
-    - Incorporate insights from previous configs
-  - **7.4 Generate & Store Refined Package** - [LLM_To_Do]
+  - **7.3 Knowledge Base Integration** - [LLM_Backlog]
+    - Incorporate insights from previous configs (Dependent on P2 Knowledge Base features)
+  - **7.4 Generate & Store Refined Package** - [LLM_Testing]
     - Create new package and store temporarily
-  - **7.5 Trigger Next Processes** - [LLM_To_Do]
+  - **7.5 Trigger Next Processes** - [LLM_Testing]
     - Call sanity check or sample generation
-  - **7.6 Status Management & Error Handling** - [LLM_To_Do]
+  - **7.6 Status Management & Error Handling** - [LLM_Testing]
     - Update statuses and handle failures
 
 ### Feature: Configuration Package Sanity Check (Internal Process - Optional Enhancement) - P2/P3 [LLM_To_Do]

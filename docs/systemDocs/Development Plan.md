@@ -6,7 +6,28 @@ This document is the single source of truth for the LLM coding assistant. The LL
 
 ## 1. Introduction
 
-This document outlines the development plan for "The Brain" API project, specifically using the Fastify web framework. It details the file structure, phased development tasks, logging strategy, initial toolbox implementation, and key considerations. This plan serves as the primary guide for the *implementation* process, complementing the Features Checklist which defines *what* needs to be built and tracks progress. The target language is TypeScript, running in a Node.js environment with Fastify.
+### Technology Stack
+
+The Brain AI Scraper is built on the following comprehensive technology stack:
+
+- **Programming Language**: TypeScript 5.8+ with strict typing
+- **Runtime Environment**: Node.js using ES Modules (`"type": "module"` in package.json)
+- **Web Framework**: Fastify 5.x with TypeBox for schema validation
+- **Database**: PostgreSQL (containerized via Podman)
+- **ORM**: Prisma 6.x for type-safe database access
+- **Containerization**: Podman for development services and test database isolation
+- **Testing Framework**: Vitest with custom utilities for database testing
+- **Build Tools**: TypeScript compiler (tsc) with ES Module output
+
+### Important Technical Requirements
+
+- **ES Module Import Paths**: All relative imports between TypeScript files MUST include the `.js` extension (e.g., `import { helper } from './helper.js'`) due to Node.js ES Module resolution requirements
+- **Database Isolation**: All tests must use the dedicated test database helpers from `tests/utils/test-db-helper.ts` to ensure proper test isolation
+- **Container Management**: Database services are managed via Podman during development
+
+### Document Purpose
+
+This document outlines the development plan for "The Brain" API project. It details the file structure, phased development tasks, logging strategy, initial toolbox implementation, and key considerations. This plan serves as the primary guide for the *implementation* process, complementing the Features Checklist which defines *what* needs to be built and tracks progress.
 
 ---
 

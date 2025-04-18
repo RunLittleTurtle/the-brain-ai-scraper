@@ -82,22 +82,18 @@ export const confirmBuildSchema = {
 // --- Schemas for POST /builds/:build_id/configure ---
 // Request body schema for build refinement
 export const ConfigureBuildBodySchema = Type.Object({
-  feedback: Type.String({
+  user_feedback: Type.String({
     minLength: 1,
     description: 'User feedback on the sample results to refine the build configuration'
   }),
-  hints: Type.Optional(Type.Array(Type.String(), {
+  tool_hints: Type.Optional(Type.Array(Type.String(), {
     description: 'Optional hints or specific instructions to guide the refinement process'
-  })),
-  selectors: Type.Optional(Type.Record(Type.String(), Type.String(), {
-    description: 'Optional specific selectors to use for different data points'
-  })),
-  include_fields: Type.Optional(Type.Array(Type.String(), {
-    description: 'Optional list of fields to include in the results'
-  })),
-  exclude_fields: Type.Optional(Type.Array(Type.String(), {
-    description: 'Optional list of fields to exclude from the results'
   }))
+}, {
+  examples: [{
+    user_feedback: "The data extraction is missing product prices. Please make sure to extract both product names and their corresponding prices.",
+    tool_hints: ["Try using Playwright for JavaScript-rendered content"]
+  }]
 });
 
 // Response schema for successful refinement initiation

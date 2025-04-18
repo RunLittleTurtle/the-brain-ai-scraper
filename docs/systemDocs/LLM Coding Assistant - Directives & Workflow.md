@@ -8,7 +8,25 @@ This document is the single source of truth for the LLM coding assistant. The LL
 
 ## 1. Core Context (ALWAYS Reference):
 
-- **Tech Stack:** TypeScript, Node.js, Fastify (API), Prisma (ORM), Podman (for services during dev), **MCP SDK (Model Context Protocol)**. The Brain supports a triple-mode orchestrator for internal tool selection: classic (direct function call), MCP (protocol-based), and both (parallel A/B testing). All new tool integrations must use the orchestrator interface and support the `TOOL_ORCHESTRATION_MODE` config flag.
+### Complete Technology Stack
+
+- **Language:** TypeScript 5.8+ with strict typing and ES Module support
+- **Runtime:** Node.js (version 18+) with `"type": "module"` in package.json
+- **API Framework:** Fastify 5.x with TypeBox for schema validation
+- **Database:** PostgreSQL (containerized via Podman)
+- **ORM:** Prisma 6.x for type-safe database access and schema management
+- **Development Environment:** Podman for containerized services (database, test infrastructure)
+- **Testing:** Vitest with custom utilities for database testing and mocking
+- **Integration:** **MCP (Model Context Protocol)** for standardized LLM tool orchestration
+
+### Core Architecture
+
+The Brain supports a triple-mode orchestrator for internal tool selection:
+- **Classic Mode:** Direct function calls to tools (traditional approach)
+- **MCP Mode:** Protocol-based orchestration using the Model Context Protocol
+- **Dual Mode:** Parallel A/B testing of both approaches with result comparison
+
+All new tool integrations **must** use the orchestrator interface and support the `TOOL_ORCHESTRATION_MODE` config flag.
 - **Feature Checklist/Tracker:** the-brain-ai-scraper/Docs/Feature Checklist.md - This defines priorities (P0 > P1 > P2 > P3) and feature requirements.
 - **Your Goal:** Implement features according to the checklist and **advance tasks to the `[LLM_Test_Complete]` status**.
 
@@ -57,13 +75,30 @@ This document is the single source of truth for the LLM coding assistant. The LL
 
 - Once a task is `[LLM_Test_Complete]`, **clearly state this** to the Human Operator and wait for their review or further instructions. **Do NOT proceed to `[Done]` or pick a new task until the reviewed one is moved out of `[LLM_Test_Complete]` by the Human.**
 
-## 8. TypeScript Import Paths (MANDATORY)
+## 8. TypeScript & ES Module Requirements (MANDATORY)
 
-**Requirement:** Due to the project's ES Module configuration (`"type": "module"` in `package.json` and `"moduleResolution": "NodeNext"` or similar in `tsconfig.json`), you **MUST** use explicit `.js` extensions for all relative imports between local TypeScript (`.ts`) files.
+### Import Path Extensions
 
-**Correct Example:** `import { MyService } from './my.service.js';`
-**Incorrect Example:** `import { MyService } from './my.service';`
+**Requirement:** Due to the project's ES Module configuration (`"type": "module"` in `package.json` and `"moduleResolution": "NodeNext"` in `tsconfig.json`), you **MUST** use explicit `.js` extensions for all relative imports between local TypeScript (`.ts`) files.
+
+**Correct Examples:**
+- `import { MyService } from './my.service.js';`
+- `import { helper } from '../utils/helper.js';`
+- `import { controller } from '../../modules/feature/feature.controller.js';`
+
+**Incorrect Examples:**
+- `import { MyService } from './my.service';` ❌
+- `import { helper } from '../utils/helper';` ❌
+- `import { controller } from '../../modules/feature/feature.controller';` ❌
 
 **Reasoning:** This is required for Node.js to correctly resolve modules at runtime when using ES Modules. Failure to include the `.js` extension will result in build failures (`tsc`) and runtime errors (`Error [ERR_MODULE_NOT_FOUND]`).
 
-**Do NOT use extensionless imports for local files.** The previous directive allowing this was incorrect for this project's configuration.
+### File Organization Conventions
+
+- **Services:** Feature-specific services should be placed in their respective module directory with `.service.ts` naming
+- **Controllers:** API route controllers should use `.controller.ts` naming
+- **Repositories:** Database access layer components should use `.repository.ts` naming
+- **Test Files:** Test files should be named with `.test.ts` suffix
+- **Test Utilities:** Common test helpers should be placed in `tests/utils/` directory
+
+**Do NOT use extensionless imports for local files under any circumstances.** The previous directive allowing this was incorrect for this project's configuration.

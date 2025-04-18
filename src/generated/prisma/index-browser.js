@@ -124,9 +124,12 @@ exports.Prisma.BuildScalarFieldEnum = {
   userObjective: 'userObjective',
   status: 'status',
   error: 'error',
+  errorDetailsJson: 'errorDetailsJson',
   initialPackageJson: 'initialPackageJson',
   sampleResultsJson: 'sampleResultsJson',
-  finalConfigurationJson: 'finalConfigurationJson',
+  userFeedbackJson: 'userFeedbackJson',
+  finalPackageJson: 'finalPackageJson',
+  metadata: 'metadata',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -174,7 +177,12 @@ exports.BuildStatus = exports.$Enums.BuildStatus = {
   CONFIRMED: 'CONFIRMED',
   ANALYSIS_FAILED: 'ANALYSIS_FAILED',
   FAILED: 'FAILED',
-  PROCESSING_FEEDBACK: 'PROCESSING_FEEDBACK'
+  PROCESSING_FEEDBACK: 'PROCESSING_FEEDBACK',
+  READY_FOR_SCRAPING: 'READY_FOR_SCRAPING',
+  SCRAPING_IN_PROGRESS: 'SCRAPING_IN_PROGRESS',
+  PARTIAL_SUCCESS: 'PARTIAL_SUCCESS',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED'
 };
 
 exports.RunStatus = exports.$Enums.RunStatus = {

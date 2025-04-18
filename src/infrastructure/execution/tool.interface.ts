@@ -5,9 +5,10 @@ import { ToolConfiguration, UniversalConfigurationPackageFormatV1 } from '../../
  */
 export interface ToolExecutionResult {
   success: boolean; // Whether the execution for a specific target succeeded
+  url?: string; // The URL that was processed by this execution
   data?: Record<string, any> | Record<string, any>[]; // Extracted data, if successful
   error?: string; // Error message, if execution failed
-  metadata?: Record<string, any>; // Optional: Additional metadata (e.g., status code, URL, timings)
+  metadata?: Record<string, any>; // Optional: Additional metadata (e.g., status code, timings)
   // Add other relevant result metadata (e.g., logs, metrics)
 }
 

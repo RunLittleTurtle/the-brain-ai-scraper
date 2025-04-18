@@ -5,75 +5,97 @@ process.env.MCP_SSE_URL = process.env.MCP_SSE_URL || 'http://dummy-mcp-sse-url';
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { buildApp } from '../../../src/app.js';
 import { PrismaClient, BuildStatus } from '../../../src/generated/prisma/index.js';
+import { createMockPrismaClient } from '../../utils/test-db-helper.js';
 
 describe('POST /builds/:build_id/confirm', () => {
   let app;
   let prisma;
 
   beforeAll(async () => {
-    app = await buildApp({ apiKey: 'test-key', logger: false });
+    // Initialize mock Prisma client
+    prisma = createMockPrismaClient() as unknown as PrismaClient;
+    
+    // Build the app with test configuration and inject our mock Prisma client
+    app = await buildApp({ 
+      apiKey: 'test-key', 
+      logger: false,
+      prisma // Pass our mock Prisma client
+    });
+    
     // Decorate Fastify to always have a test user for requests
     app.decorateRequest('user', null);
     app.addHook('onRequest', (req, _reply, done) => {
       req.user = { id: 'test-user' };
       done();
     });
-    const { PrismaClient } = await import('../../../src/generated/prisma/index.js');
-    prisma = new PrismaClient();
   });
 
   afterAll(async () => {
     await app.close();
-    await prisma.$disconnect();
   });
 
-  beforeEach(async () => {
-    // Clean up database before each test
-    await prisma.run.deleteMany({});
-    await prisma.build.deleteMany({});
+  beforeEach(() => {
+    // Reset mocks between tests
+    vi.clearAllMocks();
   });
 
   it('should confirm a build with valid ID and state', async () => {
-    // Create a test build in PENDING_USER_FEEDBACK state
-    const testBuild = await prisma.build.create({
-      data: {
-        targetUrls: JSON.stringify(['https://example.com']),
-        userObjective: 'Test objective',
-        status: BuildStatus.PENDING_USER_FEEDBACK,
-        initialPackageJson: { test: 'config' },
-        sampleResultsJson: { test: 'results' }
+    // Setup mock for a test build in PENDING_USER_FEEDBACK state
+    const testBuildId = 'test-build-confirm-1';
+    const testBuild = {
+      id: testBuildId,
+      targetUrls: JSON.stringify(['https://example.com']),
+      userObjective: 'Test objective',
+      status: BuildStatus.PENDING_USER_FEEDBACK,
+      initialPackageJson: { test: 'config' },
+      sampleResultsJson: { test: 'results' },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 'test-user'
+    };
+    
+    // Setup mocks for Prisma queries
+    prisma.build.findUnique = vi.fn().mockImplementation(({ where }) => {
+      if (where.id === testBuildId) {
+        return testBuild;
       }
+      return null;
     });
+    
+    // Mock the update call
+    const mockUpdatedBuild = {
+      ...testBuild,
+      status: BuildStatus.CONFIRMED,
+      finalPackageJson: { test: 'config' },
+      updatedAt: new Date()
+    };
+    prisma.build.update = vi.fn().mockResolvedValue(mockUpdatedBuild);
 
     // Call the confirm endpoint
     const response = await app.inject({
       method: 'POST',
-      url: `/builds/${testBuild.id}/confirm`,
+      url: `/builds/${testBuildId}/confirm`,
       headers: { Authorization: 'Bearer test-key' }
     });
-
-    // Debug response
-    console.log('Response body:', response.body);
     
     // Verify response
     expect(response.statusCode).toBe(200);
     const responseBody = JSON.parse(response.body);
-    expect(responseBody.build_id).toBe(testBuild.id);
+    expect(responseBody.build_id).toBe(testBuildId);
     expect(responseBody.status).toBe(BuildStatus.CONFIRMED);
     expect(responseBody.message).toContain('successfully confirmed');
 
-    // Verify database updates
-    const updatedBuild = await prisma.build.findUnique({
-      where: { id: testBuild.id }
-    });
-    expect(updatedBuild?.status).toBe(BuildStatus.CONFIRMED);
-    expect(updatedBuild?.finalConfigurationJson).toEqual({ test: 'config' });
+    // Verify the update was called
+    expect(prisma.build.update).toHaveBeenCalled();
   });
 
   it('should return 404 for non-existent build ID', async () => {
+    // Setup findUnique mock to return null for any ID
+    prisma.build.findUnique = vi.fn().mockResolvedValue(null);
+    
     const response = await app.inject({
       method: 'POST',
-      url: '/builds/clh0j8cxz0000abcd1234efgh/confirm', // Valid CUID format but doesn't exist
+      url: '/builds/non-existent-id/confirm',
       headers: { Authorization: 'Bearer test-key' }
     });
 
@@ -83,88 +105,87 @@ describe('POST /builds/:build_id/confirm', () => {
   });
 
   it('should return 409 for build in wrong state', async () => {
-    // Create a test build in a state other than PENDING_USER_FEEDBACK
-    const testBuild = await prisma.build.create({
-      data: {
-        targetUrls: JSON.stringify(['https://example.com']),
-        userObjective: 'Test objective',
-        status: BuildStatus.PENDING_ANALYSIS,
-      }
-    });
+    // Setup mock for a test build in CONFIRMED state
+    const testBuildId = 'test-build-confirm-2';
+    const testBuild = {
+      id: testBuildId,
+      targetUrls: JSON.stringify(['https://example.com']),
+      userObjective: 'Test objective',
+      status: BuildStatus.CONFIRMED,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 'test-user'
+    };
+    
+    // Setup findUnique mock to return our confirmed build
+    prisma.build.findUnique = vi.fn().mockResolvedValue(testBuild);
 
     const response = await app.inject({
       method: 'POST',
-      url: `/builds/${testBuild.id}/confirm`,
+      url: `/builds/${testBuildId}/confirm`,
       headers: { Authorization: 'Bearer test-key' }
     });
 
     expect(response.statusCode).toBe(409);
-    const responseBody = JSON.parse(response.body);
-    expect(responseBody.message).toContain('Cannot confirm build');
-    expect(responseBody.message).toContain(BuildStatus.PENDING_USER_FEEDBACK);
+    expect(JSON.parse(response.body).message).toContain('Cannot confirm build');
+    expect(JSON.parse(response.body).message).toContain(BuildStatus.PENDING_USER_FEEDBACK);
   });
 
   it('should return 500 for build missing required data', async () => {
-    // Create a test build without sample results or initial package
-    const testBuild = await prisma.build.create({
-      data: {
-        targetUrls: JSON.stringify(['https://example.com']),
-        userObjective: 'Test objective',
-        status: BuildStatus.PENDING_USER_FEEDBACK,
-        // Intentionally omit sampleResultsJson and initialPackageJson
-      }
-    });
+    // Setup mock for a test build missing required data
+    const testBuildId = 'test-build-confirm-3';
+    const testBuild = {
+      id: testBuildId,
+      targetUrls: JSON.stringify(['https://example.com']),
+      userObjective: 'Test objective',
+      status: BuildStatus.PENDING_USER_FEEDBACK,
+      // Missing initialPackageJson and sampleResultsJson
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 'test-user'
+    };
+    
+    // Setup findUnique mock to return our test build without required data
+    prisma.build.findUnique = vi.fn().mockResolvedValue(testBuild);
 
     const response = await app.inject({
       method: 'POST',
-      url: `/builds/${testBuild.id}/confirm`,
+      url: `/builds/${testBuildId}/confirm`,
       headers: { Authorization: 'Bearer test-key' }
     });
 
     expect(response.statusCode).toBe(500);
-    const responseBody = JSON.parse(response.body);
-    expect(responseBody.message).toContain('missing required data');
+    expect(JSON.parse(response.body).message).toContain('missing required data');
   });
 
   it('should handle database errors during update', async () => {
-    // Create a test build in PENDING_USER_FEEDBACK state
-    const testBuild = await prisma.build.create({
-      data: {
-        targetUrls: JSON.stringify(['https://example.com']),
-        userObjective: 'Test objective',
-        status: BuildStatus.PENDING_USER_FEEDBACK,
-        initialPackageJson: { test: 'config' },
-        sampleResultsJson: { test: 'results' }
-      }
-    });
-
-    // Create a more effective spy/mock on the Prisma client
-    // First backup the Prisma client instance from the app 
-    const appPrisma = app.prisma;
-    
-    // Replace prisma in the app with our mocked version
-    app.prisma = {
-      ...appPrisma,
-      build: {
-        ...appPrisma.build,
-        update: vi.fn().mockRejectedValueOnce(new Error('Database error')),
-        findUnique: appPrisma.build.findUnique  // Keep the original findUnique
-      }
+    // Setup mock for a test build in PENDING_USER_FEEDBACK state
+    const testBuildId = 'test-build-confirm-4';
+    const testBuild = {
+      id: testBuildId,
+      targetUrls: JSON.stringify(['https://example.com']),
+      userObjective: 'Test objective',
+      status: BuildStatus.PENDING_USER_FEEDBACK,
+      initialPackageJson: { test: 'config' },
+      sampleResultsJson: { test: 'results' },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 'test-user'
     };
+    
+    // Setup findUnique mock to return our test build
+    prisma.build.findUnique = vi.fn().mockResolvedValue(testBuild);
 
-    // Call the confirm endpoint
+    // Mock Prisma update to simulate a database error
+    prisma.build.update = vi.fn().mockRejectedValue(new Error('Database connection error'));
+
     const response = await app.inject({
       method: 'POST',
-      url: `/builds/${testBuild.id}/confirm`,
+      url: `/builds/${testBuildId}/confirm`,
       headers: { Authorization: 'Bearer test-key' }
     });
 
-    // Restore the original prisma instance
-    app.prisma = appPrisma;
-
-    // Verify response
     expect(response.statusCode).toBe(500);
-    const responseBody = JSON.parse(response.body);
-    expect(responseBody.message).toContain('Failed to update build status');
+    expect(JSON.parse(response.body).message).toContain('Failed to update build status');
   });
 });

@@ -72,6 +72,7 @@ const mockBuildRepositoryInstance = {
   // Add missing mocks to satisfy IBuildRepository
   createBuild: vi.fn(),
   updateFinalConfiguration: vi.fn(),
+  updateBuildError: vi.fn(), // Add mock for error reporting
 };
 const mockAnalysisInstance = {
   analyzeBuildRequest: vi.fn(),
@@ -223,10 +224,15 @@ describe('The Brain App - Regression Suite', () => {
       mockAnalysisInstance as any, // Cast to any
       mockExecutionEngineInstance as any // Cast to any
     );
-    expect(mockBuildRepositoryInstance.updateBuildStatus).toHaveBeenCalledWith(
+    // Check for updateBuildError instead of updateBuildStatus
+    expect(mockBuildRepositoryInstance.updateBuildError).toHaveBeenCalledWith(
       buildId,
-      BuildStatus.FAILED,
-      'No target URLs provided'
+      expect.objectContaining({
+        message: expect.stringContaining('target URLs'),
+        category: expect.any(String),
+        severity: expect.any(String),
+        timestamp: expect.any(String)
+      })
     );
     expect(mockAnalysisInstance.analyzeBuildRequest).not.toHaveBeenCalled();
     expect(mockExecutionEngineInstance.executePackage).not.toHaveBeenCalled();
@@ -241,10 +247,15 @@ describe('The Brain App - Regression Suite', () => {
       mockAnalysisInstance as any, // Cast to any
       mockExecutionEngineInstance as any // Cast to any
     );
-    expect(mockBuildRepositoryInstance.updateBuildStatus).toHaveBeenCalledWith(
+    // Check for updateBuildError instead of updateBuildStatus
+    expect(mockBuildRepositoryInstance.updateBuildError).toHaveBeenCalledWith(
       buildId,
-      BuildStatus.FAILED,
-      'LLM API Error'
+      expect.objectContaining({
+        message: expect.stringContaining('LLM API Error'),
+        category: expect.any(String),
+        severity: expect.any(String),
+        timestamp: expect.any(String)
+      })
     );
   });
 
@@ -260,10 +271,15 @@ describe('The Brain App - Regression Suite', () => {
       mockAnalysisInstance as any, // Cast to any
       mockExecutionEngineInstance as any // Cast to any
     );
-    expect(mockBuildRepositoryInstance.updateBuildStatus).toHaveBeenCalledWith(
+    // Check for updateBuildError instead of updateBuildStatus
+    expect(mockBuildRepositoryInstance.updateBuildError).toHaveBeenCalledWith(
       buildId,
-      BuildStatus.FAILED,
-      'Execution failed'
+      expect.objectContaining({
+        message: expect.stringContaining('Execution failed'),
+        category: expect.any(String),
+        severity: expect.any(String),
+        timestamp: expect.any(String)
+      })
     );
   });
 
@@ -276,8 +292,21 @@ describe('The Brain App - Regression Suite', () => {
       mockAnalysisInstance as any, // Cast to any
       mockExecutionEngineInstance as any // Cast to any
     );
-    // The real implementation does NOT call updateBuildStatus if parsing fails
-    expect(mockBuildRepositoryInstance.updateBuildStatus).not.toHaveBeenCalled();
+    // Check that updateBuildError is called with appropriate error details
+    expect(mockBuildRepositoryInstance.updateBuildError).toHaveBeenCalledWith(
+      buildId,
+      expect.objectContaining({
+        message: expect.any(String),  // Accept any error message
+        category: expect.any(String),
+        severity: expect.any(String),
+        timestamp: expect.any(String),
+        context: expect.objectContaining({
+          buildId: buildId,
+          jobId: jobId,
+          parsedUrls: 'failed'
+        })
+      })
+    );
     expect(mockAnalysisInstance.analyzeBuildRequest).not.toHaveBeenCalled();
     expect(mockExecutionEngineInstance.executePackage).not.toHaveBeenCalled();
   });

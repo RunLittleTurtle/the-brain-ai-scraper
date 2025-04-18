@@ -24,6 +24,11 @@ enum BuildStatus {
   ANALYSIS_FAILED // Added for clarity on LLM step failure
   FAILED
   PROCESSING_FEEDBACK // Added for P1
+  READY_FOR_SCRAPING // Added for full scrape engine
+  SCRAPING_IN_PROGRESS // Added for full scrape engine
+  PARTIAL_SUCCESS // Added for partial success in full scrape
+  COMPLETED // Added for successful completion of full scrape
+  CANCELLED // Added for user-cancelled scrape
 }
 
 model Build {
@@ -33,11 +38,14 @@ model Build {
   userObjective         String      // The user's stated goal
 
   status                BuildStatus @default(PENDING_ANALYSIS) // Use the enum
-  error                 String?     // Store error messages
+  error                 String?     // Simple error message (legacy field, kept for backward compatibility)
+  errorDetailsJson      Json?       // Structured error details including type, message, stack, context
 
   initialPackageJson    Json?       // Store the initial LLM-generated config package as JSON (jsonb in Postgres)
   sampleResultsJson     Json?       // Store sample results as JSON (jsonb in Postgres)
-  finalConfigurationJson Json?      // Store the final config package as JSON (jsonb in Postgres)
+  userFeedbackJson      Json?       // Store user feedback for refinement as JSON (jsonb in Postgres)
+  finalPackageJson      Json?       // Store the final config package as JSON (jsonb in Postgres)
+  metadata              Json?       // Store additional metadata like scrape progress, timing info, etc.
 
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt

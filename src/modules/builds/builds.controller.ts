@@ -293,7 +293,7 @@ const buildsController: FastifyPluginAsync = async (fastify: BaseFastifyInstance
         },
         async (request: FastifyRequest<ConfigureBuildRoute>, reply: FastifyReply) => {
             const { build_id } = request.params;
-            const { feedback, hints, selectors, include_fields, exclude_fields } = request.body;
+            const { user_feedback, tool_hints } = request.body;
             
             fastify.log.info({ msg: 'Processing build refinement request', build_id });
             
@@ -317,43 +317,52 @@ const buildsController: FastifyPluginAsync = async (fastify: BaseFastifyInstance
                     });
                 }
                 
-                // 3. Update the build status to PROCESSING_FEEDBACK
+                // 3. Check required data for refinement
+                if (!build.initialPackageJson || !build.sampleResultsJson) {
+                    fastify.log.error(`Build ${build_id} is missing required data for refinement.`);
+                    return reply.status(400).send({
+                        message: 'Build is missing required data for refinement (initial package or sample results).'
+                    });
+                }
+                
+                // 4. Store user feedback for later use
                 try {
+                    // Parse the original package and sample results if they're stored as strings
+                    let initialPackage;
+                    let sampleResults;
+                    try {
+                        initialPackage = typeof build.initialPackageJson === 'string' 
+                            ? JSON.parse(build.initialPackageJson) 
+                            : build.initialPackageJson;
+                            
+                        sampleResults = typeof build.sampleResultsJson === 'string'
+                            ? JSON.parse(build.sampleResultsJson)
+                            : build.sampleResultsJson;
+                    } catch (parseError) {
+                        fastify.log.error(`Error parsing stored data for build ${build_id}:`, parseError);
+                        return reply.internalServerError('Failed to parse build configuration data.');
+                    }
+                    
+                    // Store user feedback JSON in the userFeedbackJson field
+                    const userFeedbackData = {
+                        feedback: user_feedback,
+                        tool_hints: tool_hints || [],
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    // Update build status to PROCESSING_FEEDBACK and store user feedback
                     const updatedBuild = await prisma.build.update({
                         where: { id: build_id },
                         data: {
                             status: BuildStatus.PROCESSING_FEEDBACK,
+                            userFeedbackJson: JSON.stringify(userFeedbackData),
                             updatedAt: new Date()
                         }
                     });
                     
-                    // 4. Prepare feedback data for future LLM refinement process
-                    const feedbackData = {
-                        feedback,
-                        hints: hints || [],
-                        selectors: selectors || {},
-                        include_fields: include_fields || [],
-                        exclude_fields: exclude_fields || [],
-                        timestamp: new Date().toISOString()
-                    };
-                    
-                    // Store feedback in database - temporarily use initialPackageJson to store feedback
-                    // since userFeedbackJson column isn't available yet
-                    const feedbackAndConfig = {
-                        originalConfig: build.initialPackageJson,
-                        feedback: feedbackData
-                    };
-                    
-                    await prisma.build.update({
-                        where: { id: build_id },
-                        data: {
-                            initialPackageJson: feedbackAndConfig,
-                        }
-                    });
-                    
-                    // 5. Trigger async LLM refinement process
-                    // TODO: Implement actual LLM refinement process
-                    // This will be implemented as part of the LLM Package Refinement & Tool Switching feature
+                    // 5. Trigger the refinement process via queue
+                    // This will be processed asynchronously by the build processor
+                    // For now, we can just return success; the build processor will handle the actual refinement
                     
                     fastify.log.info(`Build ${build_id} refinement initiated successfully.`);
                     
@@ -361,7 +370,7 @@ const buildsController: FastifyPluginAsync = async (fastify: BaseFastifyInstance
                     return reply.status(202).send({
                         build_id: updatedBuild.id,
                         status: updatedBuild.status,
-                        message: 'Build refinement initiated successfully.'
+                        message: 'Build refinement initiated successfully. Check status endpoint for updates.'
                     });
                     
                 } catch (updateError) {

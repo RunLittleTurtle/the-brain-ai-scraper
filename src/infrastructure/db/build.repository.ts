@@ -1,6 +1,7 @@
 import { PrismaClient, Build, BuildStatus } from '../../generated/prisma/index.js';
 import { UniversalConfigurationPackageFormatV1 } from '../../core/domain/configuration-package.types.js';
 import { ExecutionResult } from '../execution/execution.service.js'; // Assuming this path
+import { ErrorDetails } from '../../core/domain/error-reporting.types.js'; // Import error reporting types
 
 // Interface for data required to create a build
 export interface CreateBuildData {
@@ -14,9 +15,11 @@ export interface IBuildRepository {
   createBuild(data: CreateBuildData): Promise<Build>;
   findBuildById(id: string): Promise<(Build & { targetUrlsList?: string[] }) | null>; // Add deserialized URLs
   updateBuildStatus(id: string, status: BuildStatus, error?: string): Promise<Build | null>;
+  updateBuildError(id: string, errorDetails: ErrorDetails): Promise<Build | null>; // Add structured error details
   updateTempPackage(id: string, pkg: UniversalConfigurationPackageFormatV1): Promise<Build | null>;
   updateSampleResults(id: string, results: ExecutionResult): Promise<Build | null>;
   updateFinalConfiguration(id: string, pkg: UniversalConfigurationPackageFormatV1): Promise<Build | null>;
+  updateUserFeedback(id: string, feedback: string): Promise<Build | null>;
 }
 
 export class BuildRepository implements IBuildRepository {
@@ -87,12 +90,57 @@ export class BuildRepository implements IBuildRepository {
     }
   }
 
-  async updateTempPackage(id: string, pkg: UniversalConfigurationPackageFormatV1): Promise<Build | null> {
+  /**
+   * Updates the build with detailed error information
+   * 
+   * @param id - Build ID
+   * @param errorDetails - Structured error details
+   * @returns The updated Build or null if update fails
+   */
+  async updateBuildError(id: string, errorDetails: ErrorDetails): Promise<Build | null> {
     try {
-      const packageJson = JSON.stringify(pkg);
+      // Store the simpler error message in the legacy field for backward compatibility
+      const errorMessage = errorDetails.message;
+      
+      // Convert ErrorDetails to a plain object with index signature for Prisma JSON compatibility
+      const errorDetailsObject: Record<string, any> = {
+        message: errorDetails.message,
+        category: errorDetails.category,
+        severity: errorDetails.severity,
+        timestamp: errorDetails.timestamp,
+      };
+      
+      // Add optional fields
+      if (errorDetails.type) errorDetailsObject.type = errorDetails.type;
+      if (errorDetails.code) errorDetailsObject.code = errorDetails.code;
+      if (errorDetails.stack) errorDetailsObject.stack = errorDetails.stack;
+      if (errorDetails.context) errorDetailsObject.context = errorDetails.context;
+      if (errorDetails.metadata) errorDetailsObject.metadata = errorDetails.metadata;
+      
       const build = await this.prisma.build.update({
         where: { id },
-        data: { /* TODO: Add valid properties here. Removed tempPackageJson as it is not in the Prisma schema. */ },
+        data: {
+          error: errorMessage,
+          errorDetailsJson: errorDetailsObject, // Store as compatible object
+          status: BuildStatus.FAILED,
+        },
+      });
+      
+      return build;
+    } catch (error) {
+      console.error(`Error updating error details for build ${id}:`, error);
+      return null;
+    }
+  }
+
+  async updateTempPackage(id: string, pkg: UniversalConfigurationPackageFormatV1): Promise<Build | null> {
+    try {
+      // Convert to plain object if needed
+      const packageObject: Record<string, any> = { ...pkg };
+      
+      const build = await this.prisma.build.update({
+        where: { id },
+        data: { initialPackageJson: packageObject }, // Use initialPackageJson from the schema
       });
       return build;
     } catch (error) {
@@ -117,18 +165,37 @@ export class BuildRepository implements IBuildRepository {
 
    async updateFinalConfiguration(id: string, pkg: UniversalConfigurationPackageFormatV1): Promise<Build | null> {
     try {
-      const packageJson = JSON.stringify(pkg);
+      // Convert to plain object if needed
+      const packageObject: Record<string, any> = { ...pkg };
+      
       const build = await this.prisma.build.update({
         where: { id },
-        data: {
-            finalConfigurationJson: packageJson,
-            status: BuildStatus.CONFIRMED // Typically set status when confirming
-        },
+        data: { finalPackageJson: packageObject, status: BuildStatus.CONFIRMED }, // Use finalPackageJson instead of finalConfigurationJson
       });
       return build;
     } catch (error) {
       console.error(`Error updating final configuration for build ${id}:`, error);
       return null; // Or throw
+    }
+  }
+  
+  /**
+   * Updates the user feedback for a build
+   * 
+   * @param id - Build ID
+   * @param feedback - User feedback as JSON string
+   * @returns The updated Build or null if update fails
+   */
+  async updateUserFeedback(id: string, feedback: string): Promise<Build | null> {
+    try {
+      const build = await this.prisma.build.update({
+        where: { id },
+        data: { userFeedbackJson: feedback }
+      });
+      return build;
+    } catch (error) {
+      console.error(`Error updating user feedback for build ${id}:`, error);
+      return null;
     }
   }
 }
