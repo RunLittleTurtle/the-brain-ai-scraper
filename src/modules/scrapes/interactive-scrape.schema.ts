@@ -129,7 +129,7 @@ export const ScrapeJobStatusSchema = Type.Object({
     processed_urls: Type.Number(),
     percentage_complete: Type.Number()
   })),
-  proposal: Type.Optional(Type.Ref(ScrapeProposalSchema)),
+  proposal: Type.Optional(Type.Ref('ScrapeProposalSchema')),
   sample_results: Type.Optional(Type.Array(Type.Any())),
   error: Type.Optional(Type.String())
 });

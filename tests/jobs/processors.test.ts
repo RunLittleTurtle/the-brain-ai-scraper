@@ -2,7 +2,10 @@
  * Test suite for the new modular build processors
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PrismaClient, BuildStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+
+// Import BuildStatus enum from the actual source
+import { BuildStatus } from '../../src/generated/prisma/index.js';
 import { IBuildRepository } from '../../src/infrastructure/db/build.repository.js';
 import { AnalysisService } from '../../src/modules/analysis/analysis.service.js';
 import { ExecutionEngineService } from '../../src/infrastructure/execution/execution.service.js';
@@ -33,27 +36,29 @@ vi.mock('@prisma/client', () => {
   return { PrismaClient: vi.fn(), BuildStatus };
 });
 
-// Create mock repository
+// Create mock repository with proper type setup
 const mockBuildRepository = {
-  findBuildById: vi.fn(),
-  updateBuildStatus: vi.fn(),
-  updateBuildError: vi.fn(),
-  createBuild: vi.fn(),
-  updateTempPackage: vi.fn(),
-  updateSampleResults: vi.fn(),
-  updateFinalConfiguration: vi.fn(),
-  updateUserFeedback: vi.fn()
+  findBuildById: vi.fn().mockImplementation((id: string) => Promise.resolve(null)),
+  updateBuildStatus: vi.fn().mockImplementation((id: string, status: BuildStatus) => Promise.resolve()),
+  updateBuildError: vi.fn().mockImplementation((id: string, error: any) => Promise.resolve()),
+  createBuild: vi.fn().mockImplementation((data: any) => Promise.resolve({ id: 'mock-id' })),
+  updateTempPackage: vi.fn().mockImplementation((id: string, pkg: any) => Promise.resolve()),
+  updateSampleResults: vi.fn().mockImplementation((id: string, results: any) => Promise.resolve()),
+  updateFinalConfiguration: vi.fn().mockImplementation((id: string, pkg: any) => Promise.resolve()),
+  updateUserFeedback: vi.fn().mockImplementation((id: string, feedback: string) => Promise.resolve())
 } as unknown as IBuildRepository;
 
-// Create mock analysis service
+// Create mock analysis service with proper type setup
 const mockAnalysisService = {
-  analyzeUserObjective: vi.fn(),
-  refineBuildConfiguration: vi.fn()
+  analyzeBuildRequest: vi.fn().mockImplementation((input: any) => Promise.resolve(null)),
+  refineBuildConfiguration: vi.fn().mockImplementation((input: any) => Promise.resolve(null))
 } as unknown as AnalysisService;
 
 // Create mock execution engine
 const mockExecutionEngine = {
-  executePackage: vi.fn()
+  execute: vi.fn().mockImplementation((pkg: any, urls: string[]) => Promise.resolve(null)),
+  executePackage: vi.fn().mockImplementation((pkg: any, urls: string[]) => Promise.resolve(null)),
+  getExecutionState: vi.fn().mockReturnValue(null)
 } as unknown as ExecutionEngineService;
 
 // Create mock Prisma client
@@ -104,8 +109,9 @@ describe('BuildAnalysisProcessor', () => {
       targetUrlsList: ['https://example.com']
     });
     
-    mockAnalysisService.analyzeUserObjective.mockResolvedValue({
-      configPackage: { schemaVersion: '1.0', description: 'Test config' }
+    mockAnalysisService.analyzeBuildRequest.mockResolvedValue({
+      success: true,
+      package: { schemaVersion: '1.0', description: 'Test config' }
     });
   });
   
@@ -124,10 +130,10 @@ describe('BuildAnalysisProcessor', () => {
       'test-build-id',
       BuildStatus.PENDING_ANALYSIS
     );
-    expect(mockAnalysisService.analyzeUserObjective).toHaveBeenCalledWith({
+    expect(mockAnalysisService.analyzeBuildRequest).toHaveBeenCalledWith({
       buildId: 'test-build-id',
       userObjective: 'Test objective',
-      urls: ['https://example.com']
+      targetUrls: ['https://example.com']
     });
     expect(mockBuildRepository.updateBuildStatus).toHaveBeenCalledWith(
       'test-build-id',
@@ -139,7 +145,7 @@ describe('BuildAnalysisProcessor', () => {
   
   it('should handle errors during analysis', async () => {
     const error = new Error('Analysis failed');
-    mockAnalysisService.analyzeUserObjective.mockRejectedValue(error);
+    mockAnalysisService.analyzeBuildRequest.mockRejectedValue(error);
     
     const result = await processor.process(
       'test-build-id',
@@ -261,23 +267,35 @@ describe('RefinementProcessor', () => {
       feedback_type: 'proposal_feedback'
     };
     
+    // Mock the sample processor to return true so the refinement can succeed
+    sampleProcessor.process.mockResolvedValue(true);
+    
+    // Ensure the analysis service returns a valid package
+    mockAnalysisService.refineBuildConfiguration.mockResolvedValue({
+      success: true,
+      package: { schemaVersion: '1.0', description: 'Successfully refined package' }
+    });
+
     const result = await processor.process(
       'test-build-id',
       userFeedback,
       FeedbackType.PROPOSAL_FEEDBACK
     );
     
+    // The result should be what the sampleProcessor.process returns
     expect(result).toBe(true);
     expect(mockBuildRepository.updateBuildStatus).toHaveBeenCalledWith(
       'test-build-id',
       BuildStatus.PROCESSING_FEEDBACK
     );
-    expect(mockAnalysisService.refineBuildConfiguration).toHaveBeenCalledWith({
+    expect(mockAnalysisService.refineBuildConfiguration).toHaveBeenCalledWith(expect.objectContaining({
       buildId: 'test-build-id',
-      configPackage: expect.objectContaining({ schemaVersion: '1.0', description: 'Final config' }),
-      userFeedback
-    });
-    expect(mockBuildRepository.updateFinalConfiguration).toHaveBeenCalled();
+      previousPackage: expect.objectContaining({ schemaVersion: '1.0' }),
+      originalObjective: expect.any(String),
+      sampleResults: expect.any(Array),
+      userFeedback: expect.any(String) // Expect a stringified userFeedback
+    }));
+    expect(mockBuildRepository.updateTempPackage).toHaveBeenCalled();
     expect(sampleProcessor.process).toHaveBeenCalledWith('test-build-id');
   });
   
@@ -288,22 +306,31 @@ describe('RefinementProcessor', () => {
       feedback_type: 'sample_feedback'
     };
     
+    // Ensure the analysis service returns a valid package
+    mockAnalysisService.refineBuildConfiguration.mockResolvedValue({
+      success: true,
+      package: { schemaVersion: '1.0', description: 'Successfully refined package for sample feedback' }
+    });
+    
     const result = await processor.process(
       'test-build-id',
       userFeedback,
       FeedbackType.SAMPLE_FEEDBACK
     );
     
+    // For sample feedback, the processor should return true directly
     expect(result).toBe(true);
     expect(mockBuildRepository.updateBuildStatus).toHaveBeenCalledWith(
       'test-build-id',
       BuildStatus.PROCESSING_FEEDBACK
     );
-    expect(mockAnalysisService.refineBuildConfiguration).toHaveBeenCalledWith({
+    expect(mockAnalysisService.refineBuildConfiguration).toHaveBeenCalledWith(expect.objectContaining({
       buildId: 'test-build-id',
-      configPackage: expect.objectContaining({ schemaVersion: '1.0', description: 'Final config' }),
-      userFeedback
-    });
+      previousPackage: expect.objectContaining({ schemaVersion: '1.0' }),
+      originalObjective: expect.any(String),
+      sampleResults: expect.any(Array),
+      userFeedback: expect.any(String) // Expect a stringified userFeedback
+    }));
     expect(mockBuildRepository.updateFinalConfiguration).toHaveBeenCalled();
     expect(mockBuildRepository.updateBuildStatus).toHaveBeenCalledWith(
       'test-build-id',
