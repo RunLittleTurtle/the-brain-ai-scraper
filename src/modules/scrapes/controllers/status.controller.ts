@@ -27,7 +27,7 @@ export class StatusController {
    * Register the get status route
    */
   registerRoutes(fastify: any) {
-    fastify.get<GetScrapeJobStatusRoute>(
+    fastify.get(
       '/scrapes/:job_id',
       {
         schema: {
@@ -56,9 +56,10 @@ export class StatusController {
         return reply.status(404).send({
           job_id: job_id,
           status: 'ERROR',
-          total_results: 0,
-          results: [],
-          execution_time_ms: 0
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          message: 'Job not found',
+          error: 'The requested scrape job could not be found'
         });
       }
       
@@ -153,6 +154,10 @@ export class StatusController {
       request.log.error({ error }, '[StatusController] Error getting scrape job status');
       
       return reply.status(500).send({
+        job_id: params.job_id,
+        status: 'ERROR',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         error: 'Failed to get scrape job status',
         message: error.message || 'An unexpected error occurred'
       });

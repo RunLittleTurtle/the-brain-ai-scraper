@@ -10,6 +10,8 @@ declare module 'fastify' {
     toolboxService: ToolboxService;
     executionEngine: ExecutionEngineService;
     fullScrapeService: FullScrapeExecutionService;
+    executionService: FullScrapeExecutionService; // Adding alias for fullScrapeService
+    analysisService: AnalysisService;
   }
 }
 import { McpService } from '../mcp-server/mcp.service.js';
@@ -17,6 +19,10 @@ import { ExecutionEngineService } from '../infrastructure/execution/execution.se
 import { FullScrapeExecutionService } from '../infrastructure/execution/full-scrape.service.js';
 import { BuildRepository } from '../infrastructure/db/build.repository.js';
 import { ToolboxService } from '../infrastructure/toolbox/toolbox.service.js';
+import { AnalysisService } from '../modules/analysis/analysis.service.js';
+import { createOpenaiService } from '../infrastructure/llm/fastify-openai.service.js';
+import { OpenaiService } from '../infrastructure/llm/openai.service.js';
+import { UnifiedOrchestrator } from '../orchestrator/orchestrator.interface.js';
 
 // Import other services if needed, e.g.:
 // import { AnotherService } from '../services/another.service.js';
@@ -88,17 +94,51 @@ const dependenciesPlugin: FastifyPluginAsync = async (fastify) => {
     );
     // Decorate the instance onto Fastify
     fastify.decorate('fullScrapeService', fullScrapeService);
-    fastify.log.info('FullScrapeExecutionService decorated successfully.');
+    // Also decorate as executionService for backward compatibility
+    fastify.decorate('executionService', fullScrapeService);
+    fastify.log.info('FullScrapeExecutionService decorated successfully (also as executionService)');
   } catch (error) {
     fastify.log.error({ err: error }, 'Failed to instantiate or decorate FullScrapeExecutionService.');
     throw new Error('FullScrapeExecutionService initialization failed.');
   }
 
-  // --- Decorate other services here --- 
-  // Example:
-  // const anotherServiceInstance = new AnotherService(fastify.log);
-  // fastify.decorate('anotherService', anotherServiceInstance);
-  // fastify.log.info('AnotherService decorated successfully.');
+  // --- OpenAI Service ---
+  let openaiService: OpenaiService;
+  try {
+    // Use the factory function to create a compatible OpenaiService
+    openaiService = createOpenaiService(fastify.log, fastify.toolboxService);
+    fastify.log.info('OpenaiService instantiated successfully');
+  } catch (error) {
+    fastify.log.error({ err: error }, 'Failed to instantiate OpenaiService.');
+    throw new Error('OpenaiService initialization failed.');
+  }
+
+  // --- Unified Orchestrator (optional) ---
+  let orchestrator: UnifiedOrchestrator | undefined;
+  if (process.env.TOOL_ORCHESTRATION_MODE && ['mcp', 'dual'].includes(process.env.TOOL_ORCHESTRATION_MODE)) {
+    // Orchestrator implementation would go here if needed
+    // This is just a placeholder - replace with actual implementation if required
+    fastify.log.info('Unified Orchestrator support detected but not implemented.');
+  }
+
+  // --- Analysis Service ---
+  try {
+    // Get toolbox from toolboxService
+    const toolbox = fastify.toolboxService.getToolbox();
+    // Instantiate AnalysisService with dependencies
+    const analysisService = new AnalysisService(
+      fastify.buildRepository,
+      toolbox,
+      openaiService,
+      orchestrator
+    );
+    // Decorate the instance onto Fastify
+    fastify.decorate('analysisService', analysisService);
+    fastify.log.info('AnalysisService decorated successfully.');
+  } catch (error) {
+    fastify.log.error({ err: error }, 'Failed to instantiate or decorate AnalysisService.');
+    throw new Error('AnalysisService initialization failed.');
+  }
 
   fastify.log.info('Dependencies plugin registration complete.');
 }

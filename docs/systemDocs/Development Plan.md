@@ -105,16 +105,55 @@ This plan breaks down development into prioritized phases (P0-P3). Each task inc
     *   **Implementation:** Integrate queue system (e.g., BullMQ). Create a Fastify plugin (`src/plugins/queue.plugin.ts`) to setup queue connections and clients. Implement `QueueProducer` (`src/infrastructure/queue/`) using the client, fulfilling the `IQueueProducer` interface. Inject producer into services where needed (DI).
     *   **Logging:** Log queue connection via plugin. Log job additions (INFO) with job IDs/data.
 
-7.  ### Implement `builds` Module Routes (`POST /builds`, `GET /builds/{id}`, `POST /builds/{id}/confirm`)
-    *   **Implementation:** Create `src/modules/builds/`. Define routes in `build.routes.ts`. Define JSON schemas in `build.schema.ts` for request/response validation/serialization (Fastify uses these directly). Implement `BuildService` with methods:
-        *   `createBuild`: Validates input (via schema), creates DB record, calls `queueProducer.addBuildJob()`, returns data for `202`.
-        *   `getBuild`: Fetches build, returns status/samples. Handles 404.
-        *   `confirmBuild`: Validates state, retrieves temp package, saves as `final_configuration`, updates status.
-    *   **Logging:** Log request handling start/end (INFO via Fastify hooks/logger). Log service calls (INFO) with `buildId`, `userId`. Log validation errors (WARN - Fastify might log automatically). Log job queuing (INFO). Log confirmation (INFO). Log service/DB errors (ERROR).
+7.  ### Implement Modular Interactive Scrape Controllers
+    *   **Implementation:** Create a modular architecture for the scraping workflow by breaking down the monolithic controller into specialized controllers for each step of the process: `CreateScrapeController`, `StatusController`, `ProposalFeedbackController`, `SampleFeedbackController`, and `ResultsController`.
+
+## 5.1 Command-Line Tool (CLI)
+
+1. **Architecture:** Node.js CLI application using commander.js, supporting a command hierarchy.  
+2. **Configuration Management:** Local config file (.thebrainrc) for endpoint URL, API key, default formats.  
+3. **Core Commands:**
+   * `brain scrape create "<objective>" [--urls=<url1,url2,...>] [--orchestration-mode=<mode>]` - Start an interactive scraping job
+   * `brain scrape status <job_id>` - Check status of a scraping job
+   * `brain scrape feedback:proposal <job_id> [--approve/--reject] [options]` - Submit feedback on a proposal
+   * `brain scrape feedback:sample <job_id> [--approve/--reject] [options]` - Submit feedback on sample results
+   * `brain scrape results <job_id> [--format=json/csv]` - Get final scraping results
+   * `brain builds [id]` - Manage/view builds
+   * `brain runs [id]` - Manage/view runs
+   * `brain config` - Manage configuration
+
+### 5.1.1 MCP-Oriented CLI Integration
+
+1. **Orchestration Mode Support:**
+   * CLI provides explicit control over the orchestration mode via the `--orchestration-mode` flag (values: classic, mcp, dual).
+   * When creating a scrape job, this option is passed to the backend to control which tool orchestration approach is used.
+   * Default mode is determined by the server-side `TOOL_ORCHESTRATION_MODE` configuration.
+
+2. **MCP Tool Selection Visibility:**
+   * Status command enhanced to show detailed information about MCP tool selection process.
+   * Displays which tool was selected and the reasoning behind the selection.
+   * In dual mode, shows comparative metrics between classic and MCP implementations.
+
+3. **Enhanced Authentication:**
+   * All CLI commands use API key authentication from config file.
+   * Implementation maintains proper security by storing keys in user's home directory.
+   * Support for different authentication methods (API key, OAuth) depending on deployment environment.
+
+4. **Rich Terminal Interface:**
+   * Interactive progress displays for long-running operations.
+   * Color-coded output to distinguish between different types of information.
+   * Support for both human-readable and machine-parseable output formats.
+
+5. **MCP Tool Performance Metrics:**
+   * When operating in dual mode, CLI displays performance comparisons between classic and MCP implementations.
+   * Metrics include accuracy, execution time, error rates, and resource usage.
+   * Historical performance data to track improvements over time.
+
+## 5.2 Backend Implementation
 
 8.  ### Implement Basic LLM Analysis Job (`build.processor.ts`)
     *   **Implementation:** Create `src/jobs/build.processor.ts`. Define worker logic for `build-queue` jobs. Fetch build context. Call (mocked/simple) `LlmService` to get initial package (Universal Format v1). Update build status. Store temporary package. Trigger basic sample generation logic within this job or call a dedicated service.
-    *   **Logging:** Log job processing start/success/failure (INFO/ERROR) with `jobId`, `buildId`. Log LLM interaction (DEBUG). Log generated package (DEBUG). Log status changes (INFO).
+    *   **Logging:** Log job processing start/success/failure (INFO/ERROR) with `jobId`, `buildId`. Log LLM interaction (DEBUG). Log generated package (DEBUG). Log status changes (INFO). Log errors (ERROR). Include `buildId`.
 
 9.  ### Implement Basic Execution Framework & Initial Tool (Toolbox v0.1)
     *   **Implementation:** Create initial `Toolbox` registry (`src/infrastructure/toolbox/`) and `ExecutionEngine` service. Implement one basic "tool" (e.g., Fetch/Cheerio, see Section 5). Engine logic: load tool from package, run on sample URLs, capture results/errors. Called by `BuildProcessor`.
@@ -146,8 +185,9 @@ This plan breaks down development into prioritized phases (P0-P3). Each task inc
     *   **Logging:** Log refinement request (INFO). Log validation failure (WARN). Log refinement job queuing (INFO). Include `userId`, `buildId`.
 
 2.  ### Implement LLM Package Refinement Job Logic
-    *   **Implementation:** Enhance `BuildProcessor` to handle refinement jobs. Load context, call enhanced `LlmService` with detailed prompt. Process new package from LLM. Overwrite temporary package. Trigger sample generation (using the *new* package). Update status.
-    *   **Logging:** Log refinement job start/end (INFO). Log context (DEBUG). Log prompt/response (DEBUG). Log new package (DEBUG). Log status updates (INFO). Log errors (ERROR). Include `buildId`.
+    *   **Implementation:** Enhance `RefinementProcessor` to handle refinement jobs based on user feedback. Implement feedback processing for both proposal and sample stages. Add logic to determine when tool switching is needed. Support translating configuration between different tool formats. Create new package and trigger appropriate next steps based on the refinement outcome.
+    *   **Logging:** Log refinement job start/end (INFO). Log user feedback and context (DEBUG). Log prompt/response (DEBUG). Log new package (DEBUG). Log status updates (INFO). Log errors (ERROR). Include `buildId`.
+    *   **Terminal Interface:** Implement terminal commands for submitting proposal feedback (`scrape:feedback:proposal <job_id> --approve/--reject [options]`) and sample feedback (`scrape:feedback:sample <job_id> --approve/--reject [options]`).
 
 3.  ### Implement Core Toolbox Tools (See Section 3)
     *   **Implementation:** Build the initial set of tools (Fetch/Cheerio, Playwright, Basic Proxy, User-Agent Rotator) within `src/infrastructure/toolbox/`, ensuring they adhere to the `ITool` interface. Update `Toolbox` registry.
@@ -240,8 +280,6 @@ This plan breaks down development into prioritized phases (P0-P3). Each task inc
     *   **Implementation:** Design strategies for KB aging/validation (TTL, usage counters, re-validation jobs).
     *   **Logging:** Log KB entry usage frequency/age during retrieval (DEBUG).
 
-Okay, let's significantly enhance the "Initial Toolbox Implementation" section to include more robust open-source tools and techniques specifically targeting difficult websites. This iteration focuses on providing the necessary building blocks for P0/P1.
-
 ## 3. Initial Toolbox Implementation (Enhanced for Difficult Sites - Core P0/P1 Requirement)
 
 The `Modular Tool Integration & Execution Framework` needs a capable initial set of tools to handle complex, heavily protected websites like social media platforms, job boards, and e-commerce sites. These implementations focus on open-source libraries and common techniques. Tools reside in `src/infrastructure/toolbox/` and adhere to the `ITool` interface.
@@ -292,6 +330,7 @@ interface IToolbox {
 1.  **`scraper:static_v1`** (Formerly `fetch_cheerio_v1`)
     *   **Purpose:** Handles basic static HTML websites or API endpoints. Efficient for simple targets.
     *   **Implementation:** Use `axios` with robust configuration (timeouts, retries on network errors, header handling, proxy support via `https-proxy-agent`). Use `cheerio` for server-side DOM parsing and data extraction.
+    *   **Processor Integration:** Used by the `ExecutionProcessor` and `SampleGenerationProcessor` for static content scraping. Can be selected automatically by the `BuildAnalysisProcessor` or switched to by the `RefinementProcessor` based on user feedback.
     *   **Config Params:** `selectors: { [fieldName: string]: string | { selector: string, attribute?: string, type?: 'text'|'html'|'number' } }`, `targetUrlPattern?` (regex to validate URL), `method?: 'GET' | 'POST'`, `body?: any`, `responseType?: 'json' | 'html'`.
     *   **Interface Adherence:** Implement `initialize`, `run`. `cleanup` likely no-op.
     *   **Dependencies:** `axios`, `cheerio`, `https-proxy-agent`.

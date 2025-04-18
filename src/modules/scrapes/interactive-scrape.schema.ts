@@ -91,11 +91,14 @@ export const InteractiveScrapeResponseSchema = Type.Object({
     description: 'Current status of the scrape job',
     enum: ['pending', 'searching_knowledge_base', 'generating_proposal', 'waiting_for_approval', 
            'generating_samples', 'waiting_for_sample_feedback', 'refining_approach', 
-           'executing_full_scrape', 'completed', 'failed']
+           'executing_full_scrape', 'completed', 'failed', 'cancelled']
   }),
   message: Type.String({
     description: 'Human-readable description of the current job status'
-  })
+  }),
+  error: Type.Optional(Type.String({
+    description: 'Error message if the job failed'
+  }))
 });
 
 export type InteractiveScrapeResponse = Static<typeof InteractiveScrapeResponseSchema>;
@@ -114,7 +117,9 @@ export const ScrapeProposalSchema = Type.Object({
     })),
     estimated_completion_time: Type.String(),
     sample_size: Type.Number()
-  })
+  }),
+  message: Type.Optional(Type.String()),
+  error: Type.Optional(Type.String())
 });
 
 export type ScrapeProposal = Static<typeof ScrapeProposalSchema>;
@@ -131,7 +136,9 @@ export const ScrapeJobStatusSchema = Type.Object({
   })),
   proposal: Type.Optional(Type.Ref('ScrapeProposalSchema')),
   sample_results: Type.Optional(Type.Array(Type.Any())),
-  error: Type.Optional(Type.String())
+  error: Type.Optional(Type.String()),
+  message: Type.Optional(Type.String()),
+  total_results: Type.Optional(Type.Number())
 });
 
 export type ScrapeJobStatus = Static<typeof ScrapeJobStatusSchema>;
@@ -141,7 +148,9 @@ export const ScrapeResultsSchema = Type.Object({
   status: Type.String(),
   total_results: Type.Number(),
   results: Type.Array(Type.Any()),
-  execution_time_ms: Type.Number()
+  execution_time_ms: Type.Number(),
+  message: Type.Optional(Type.String()),
+  error: Type.Optional(Type.String())
 });
 
 export type ScrapeResults = Static<typeof ScrapeResultsSchema>;

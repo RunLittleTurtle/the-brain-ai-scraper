@@ -49,6 +49,7 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 ### Feature: API Endpoint for Build Initiation (`POST /builds`) - P0 [Done]
 
 - Done Criteria:
+  - All commands documented in a terminal-accessible help system.
   - Endpoint accepts JSON payload: `target_urls` (array of strings), `user_objective` (string).
   - Performs input validation (URL format, non-empty objective/URLs).
   - Performs Authentication/Authorization (e.g., API Key).
@@ -71,7 +72,6 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
 
   - **2.5 AnalysisService Regression Tests** - [LLM_Test_Complete]
     - End-to-end and fallback tests for all modes.
-, 2.4
 
 ### Feature: API Endpoint for Run Execution (`POST /runs`) - P0 [LLM_Test_Complete]
 - **Sub-Features:**
@@ -182,14 +182,21 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
     - Extend current engine to handle full scrapes beyond samples
     - Implement progress tracking during execution
   - **8.2 Error Handling & Recovery** - [LLM_In_Progress]
-    - Implement robust error handling during scraping
-    - Create failure recovery mechanisms
-  - **8.3 Execution Management** - [LLM_Backlog]
-    - Add support for cancellation and timeout management
-    - Implement rate limiting and throttling
-  - **8.4 State Management** - [LLM_Backlog]
-    - Ensure proper database state transitions during execution
-    - Track execution progress and store intermediate results
+    - Implement recovery strategies for transient errors
+    - Add configurable retry mechanisms
+  - **8.3 Result Collection & Storage** - [LLM_In_Progress]
+    - Define result storage schema and DB structure
+    - Implement collection and storage of scraped data
+  - **8.4 Cancellation Support** - [LLM_In_Progress]
+    - Add support for cancelling running scrapes
+    - Implement clean termination with partial results
+  - **8.5 Edge Cases & Recovery** - [LLM_In_Progress]
+    - Handle edge cases like interrupted scrapes
+    - Implement job recovery mechanisms
+  - **8.6 Terminal-Based Command Interface** - [LLM_In_Progress]
+    - Implement CLI commands for initiating scrapes
+    - Add status checking commands
+    - Support feedback submission via terminal
 
   - **8.2 Progress Tracking** - [LLM_Backlog]
     - Add real-time progress tracking during execution
@@ -308,6 +315,28 @@ This checklist prioritizes features (P0-P3) grouping them by parent page/module,
   - Aggregates results (successful JSON outputs and any persistent errors per URL).
   - Updates run status periodically (e.g., `running` with progress) and finally to `completed` or `failed`.
   - Stores the aggregated results associated with the `run_id`.
+
+### Feature: Terminal-based CLI with MCP Integration - P1 [LLM_Test_Complete]
+
+- **Description:** Implement a robust terminal-based command interface for interacting with the REST API, with specific enhancements for MCP orchestration visibility and control.
+- **Done Criteria:**
+  - **1. Command Structure** - [LLM_Test_Complete]
+    - Implements modular command structure with intuitive subcommands for each phase of the scraping workflow.
+    - All commands documented in a terminal-accessible help system.
+  - **2. MCP Orchestration Mode Support** - [LLM_Test_Complete]
+    - CLI provides options to specify orchestration mode (classic, MCP, dual) when creating scrape jobs.
+    - Status commands show detailed information about which tools were selected by the MCP protocol.
+    - Support for visualizing tool performance metrics from dual mode operation.
+  - **3. Authentication & Security** - [LLM_Test_Complete]
+    - Proper API key handling for all requests to the REST API endpoints.
+    - Secure storage of credentials in configuration file.
+  - **4. Interactive Workflow Support** - [LLM_In_Progress]
+    - Commands for all phases: job creation, status checking, proposal feedback, sample feedback, and results retrieval.
+    - Watch mode for real-time status updates with intelligent polling.
+    - Rich terminal output with color coding and progress visualization.
+  - **5. Results Management** - [LLM_In_Progress]
+    - Support for exporting results in multiple formats (JSON, CSV).
+    - Pagination and filtering options for large result sets.
 
 ### Feature: API Endpoint for Run Status (`GET /runs/{run_id}`) - P0 [LLM_To_Do]
 
