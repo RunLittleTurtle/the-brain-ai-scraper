@@ -1,6 +1,6 @@
 import fp from 'fastify-plugin';
 // Always use the custom FastifyInstance type for plugin typing
-import type { FastifyPluginAsync } from '../types/fastify.js';
+import type { FastifyPluginAsync } from 'fastify';
 import type { FastifyInstance as BaseFastifyInstance } from 'fastify'; // Use base type for plugins that do not require custom decorations
 import { PrismaClient } from '../generated/prisma/index.js';
 
